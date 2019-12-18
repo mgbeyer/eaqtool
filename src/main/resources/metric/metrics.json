@@ -1,0 +1,1973 @@
+{
+  "Name" : "EAQ Tool Metrics",
+  "Description" : "Basic Test Suite",
+  "Version" : "1.0",
+  "Date" : "2019-08-29",
+  "ScriptingLanguage" : "XQuery",
+  "GlobalBLGreen" : 0.25,
+  "GlobalBLRed" : 0.75,
+  "GlobalBLMarginGreen" : 0.05,
+  "GlobalBLMarginRed" : 0.05,
+  "StandardScaleMin" : 0.0,
+  "StandardScaleMax" : 1.0,
+  "Metric" : [
+    {
+      "Id" : "QI11",
+      "Name" : "Expected layer coverage",
+      "Description" : "For all core layers #elem-by-layer should be at least 1.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Completeness",
+      "Normalizer" : "NT_STEP",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.0,
+        "BLRed" : 1.0
+      },
+      "Script" : [
+        "sum(",
+        "  for $cat in ('Business', 'Application', 'Technology') ",
+        "  return if ( count (eaqt:execXq(concat('BAS_getElementsByLayerCategory:cat=', $cat))) = 0 ) then 1 else 0",
+        ")"
+      ],
+      "AmmpList" : [
+        "BAS_getElementsByLayerCategory"
+      ]
+    },
+    {
+      "Id" : "QI12",
+      "Name" : "Expected aspect coverage",
+      "Description" : "For all aspect types #elem-by-aspect should be at least 1.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Completeness",
+      "Normalizer" : "NT_STEP",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.0,
+        "BLRed" : 1.0
+      },
+      "Script" : [
+        "sum(",
+        "  for $cat in ('Active', 'Passive', 'Behavior') ",
+        "  return if ( count (eaqt:execXq(concat('BAS_getElementsByAspectCategory:cat=', $cat))) = 0 ) then 1 else 0",
+        ")"
+      ],
+      "AmmpList" : [
+        "BAS_getElementsByAspectCategory"
+      ]
+    },
+    {
+      "Id" : "QI13",
+      "Name" : "Expected layer alignment",
+      "Description" : "#rel-by-type_between_layers-by-type should be >0 for all undirected Serving relationships between layers B-A, A-T or B-T. #rel-by-type-and-dir_between_layers-by-type should be >0 for all directed Realization relationships between layers from-to A-B, T-A or T-B. Raw value = fault count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Completeness",
+      "Normalizer" : "NT_SBOWLES:s=0.7",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.25,
+        "BLRed" : 0.75
+      },
+      "Script" : [
+        "sum(",
+        "  let $serving_BA := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type_Between_Layers-By-Type:reltype=Serving,layertype1=Business,layertype2=Application') ",
+        "  let $serving_AT := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type_Between_Layers-By-Type:reltype=Serving,layertype1=Application,layertype2=Technology') ",
+        "  let $serving_BT := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type_Between_Layers-By-Type:reltype=Serving,layertype1=Business,layertype2=Technology') ",
+        "  let $realization_AB := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Layers-By-Type:reltype=Realization,layertype_source=Application,layertype_target=Business') ",
+        "  let $realization_TA := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Layers-By-Type:reltype=Realization,layertype_source=Technology,layertype_target=Application') ",
+        "  let $realization_TB := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Layers-By-Type:reltype=Realization,layertype_source=Technology,layertype_target=Business') ",
+        "  return $serving_BA+$serving_AT+$serving_BT+$realization_AB+$realization_TA+$realization_TB",
+        ")"
+      ],
+      "AmmpList" : [
+        "AMMP_CountIsZero_Rel-By-Type_Between_Layers-By-Type",
+        "AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Layers-By-Type"
+      ]
+    },
+    {
+      "Id" : "QI14",
+      "Name" : "Model timeliness",
+      "Description" : "Timeliness should be above a threshold.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Completeness",
+      "Normalizer" : "NT_RAW",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.95,
+        "BLRed" : 0.65
+      },
+      "Script" : [
+        "let $decay := 0.0075 ",
+        "let $age := eaqt:ageOfModel() ",
+        "let $tim := if (string(number($age))!='NaN') then math:exp(-$decay*$age) else '' ",
+        "return $tim"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI15",
+      "Name" : "Sufficient model view coverage",
+      "Description" : "Basic view coverage should be high (ratio between #views_fitting_basic_type and #basic_type_view). Raw value = fit count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Completeness",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.75,
+        "BLRed" : 0.33
+      },
+      "Script" : [
+        "let $basicview := eaqt:execEaMeta('getBasicViews') ",
+        "let $views := eaqt:execXq('BAS_getViews') ",
+        "let $count := count(distinct-values(",
+        "  for $vi in $views ",
+        "  let $covered := eaqt:execXq(concat('AMMP_basicViewsCoveredByView:vid=', $vi)) ",
+        "  return distinct-values($covered)[. = distinct-values($basicview)]",
+        ")) ",
+        "return ($count, count($basicview))"
+      ],
+      "AmmpList" : [
+        "BAS_getViews",
+        "AMMP_basicViewsCoveredByView"
+      ]
+    },
+    {
+      "Id" : "QI16",
+      "Name" : "Sufficient view coverage of stakeholder roles",
+      "Description" : "Basic view coverage wrt. stakeholders should be high (ratio between #views_fitting_stakeholder_role and #stakeholder_roles). Raw value = fit count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Completeness",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.66,
+        "BLRed" : 0.33
+      },
+      "Script" : [
+        "let $stakeholders := eaqt:execEaMeta('getStakeholderRoles') ",
+        "let $basicview := eaqt:execEaMeta('getBasicViews') ",
+        "let $views := eaqt:execXq('BAS_getViews') ",
+        "let $count := count(distinct-values(",
+        "  for $bvi in distinct-values(",
+        "    for $vi in $views ",
+        "    let $covered := eaqt:execXq(concat('AMMP_basicViewsCoveredByView:vid=', $vi)) ",
+        "    return distinct-values($covered)[. = distinct-values($basicview)]",
+        "  )",
+        "  return eaqt:execEaMeta(concat('getStakeholderRolesByBasicView:id=', $bvi))",
+        ")) ",
+        "return ($count, count($stakeholders))"
+      ],
+      "AmmpList" : [
+        "BAS_getViews",
+        "AMMP_basicViewsCoveredByView"
+      ]
+    },
+    {
+      "Id" : "QI17",
+      "Name" : "Sufficient view element coverage",
+      "Description" : "View element coverage should be high (low ratio between #elem_not_used_in_any_view and #elements_in_model). Raw value = fault count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Completeness",
+      "Normalizer" : "NT_RATIOX:reverseRatio=true",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.75,
+        "BLRed" : 0.25
+      },
+      "Script" : [
+        "let $vielem := /ea:model/ea:views/ea:diagrams/ea:view/descendant-or-self::ea:node[@xsi:type='Element']/@elementRef ",
+        "let $elem := /ea:model/ea:elements/ea:element/@identifier ",
+        "let $inview := (",
+        "  for $e in $elem ",
+        "  where $e=$vielem ",
+        "  return $e",
+        ")",
+        "let $count := count($elem[not(. = $inview)]) ",
+        "return ($count, count($elem))"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI21a",
+      "Name" : "Coherence: Business active assigned to business behavior",
+      "Description" : "Every business active structure should have at least one assignment to a business behavior object. Compute 1 - ratio of elements which are not coherent to the rule vs. the total number of elements considered. Raw value = fault count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Correctness",
+      "Normalizer" : "NT_RATIOX:reverseRatio=true",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.95,
+        "BLRed" : 0.75
+      },
+      "Script" : [
+        "let $source_elem := eaqt:execXq('BAS_getElementsByLayerCategoryAndAspectCategory:lcat=Business,acat=Active') ",
+        "let $source_elem := insert-before($source_elem, 0, 'Location') ",
+        "let $target_elem := eaqt:execXq('BAS_getElementsByLayerCategoryAndAspectCategory:lcat=Business,acat=Behavior') ",
+        "let $rt_assign := 'Assignment' ",
+        "let $rt_aggregate := 'Aggregation' ",
+
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view[count(descendant::ea:node[@xsi:type='Element'])>0] ",
+        "let $nodes := $views/descendant-or-self::ea:node[@xsi:type='Element'] ",
+        "let $elems := /ea:model/ea:elements/ea:element[@identifier=$nodes/@elementRef] ",
+
+        "let $targetelem:= $elems[@xsi:type=$target_elem] ",
+        "let $assignments := /ea:model/ea:relationships/ea:relationship[@xsi:type=$rt_assign and @target=$targetelem/@identifier] ",
+        "let $aggregates := /ea:model/ea:relationships/ea:relationship[@xsi:type=$rt_aggregate and @target=$elems[@xsi:type=$source_elem]/@identifier and @source=$elems[@xsi:type='Location']/@identifier and @source=$assignments/@source] ",
+
+        "let $source := ( ",
+        "  for $ex in $source_elem ",
+        "  let $ecount := count($elems[@xsi:type=$ex]) ",
+        "  return if ($ecount>0) then $ex else () ",
+        ")",
+
+        "let $totalelem := count($elems[@xsi:type=$source]) ",
+
+        "let $count := sum( ",
+        "  for $e in $source ",
+        "  let $check := $elems[@xsi:type=$e] ",
+        "  return count($check) - count(( ",
+        "    for $elem in $check ",
+        "    where ( $elem[@identifier=$assignments/@source] or ",
+        "            $elem[@identifier=$aggregates/@target] ",
+        "          ) ",
+        "    return $elem ",
+        "  )) ",
+        ") ",
+        "return ($count, $totalelem)"
+      ],
+      "AmmpList" : [
+        "BAS_getElementsByLayerCategoryAndAspectCategory"
+      ]
+    },
+    {
+      "Id" : "QI21b",
+      "Name" : "Coherence: Business service realized by business process",
+      "Description" : "Every business process realizes as least one business service. Compute 1 - ratio of elements which are not coherent to the rule vs. the total number of elements considered. Raw value = fault count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Correctness",
+      "Normalizer" : "NT_RATIOX:reverseRatio=true",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.95,
+        "BLRed" : 0.75
+      },
+      "Script" : [
+        "let $source_elem := 'BusinessService' ",
+        "let $target_elem := ('BusinessProcess', 'BusinessFunction', 'BusinessInteraction') ",
+        "let $rt_realize := 'Realization' ",
+
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view[count(descendant::ea:node[@xsi:type='Element'])>0] ",
+        "let $nodes := $views/descendant-or-self::ea:node[@xsi:type='Element'] ",
+        "let $elems := /ea:model/ea:elements/ea:element[@identifier=$nodes/@elementRef] ",
+
+        "let $targetelem:= $elems[@xsi:type=$target_elem] ",
+        "let $realizations := /ea:model/ea:relationships/ea:relationship[@xsi:type=$rt_realize and @source=$targetelem/@identifier] ",
+
+        "let $source := ( ",
+        "  for $ex in $source_elem ",
+        "  let $ecount := count($elems[@xsi:type=$ex]) ",
+        "  return if ($ecount>0) then $ex else () ",
+        ") ",
+
+        "let $totalelem := count($elems[@xsi:type=$source]) ",
+
+        "let $count := sum( ",
+        "  for $e in $source ",
+        "  let $check := $elems[@xsi:type=$e] ",
+        "  return count($check) - count(( ",
+        "    for $elem in $check ",
+        "    where $elem[@identifier=$realizations/@target] ",
+        "    return $elem ",
+        "  )) ",
+        ") ",
+        "return ($count, $totalelem)"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI21c",
+      "Name" : "Coherence: Application component uses technology",
+      "Description" : "Every application component uses technology service, node, or device. Compute 1 - ratio of elements which are not coherent to the rule vs. the total number of elements considered. Raw value = fault count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Correctness",
+      "Normalizer" : "NT_RATIOX:reverseRatio=true",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.95,
+        "BLRed" : 0.75
+      },
+      "Script" : [
+        "let $target_elem := ('ApplicationComponent', 'ApplicationCollaboration') ",
+        "let $source_elem := ('TechnologyService', 'TechnologyFunction', 'Node', 'Device', 'SystemSoftware') ",
+        "let $rt_serve := 'Serving' ",
+        "let $rt_assign := 'Assignment' ",
+        "let $rt_aggregate := 'Aggregation' ",
+
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view[count(descendant::ea:node[@xsi:type='Element'])>0] ",
+        "let $nodes := $views/descendant-or-self::ea:node[@xsi:type='Element'] ",
+        "let $elems := /ea:model/ea:elements/ea:element[@identifier=$nodes/@elementRef] ",
+
+        "let $sourceelem:= $elems[@xsi:type=$source_elem] ",
+        "let $serves := /ea:model/ea:relationships/ea:relationship[@xsi:type=$rt_serve and @source=$sourceelem/@identifier] ",
+        "let $assignments := /ea:model/ea:relationships/ea:relationship[@xsi:type=$rt_assign and @source=$elems[@xsi:type=$target_elem]/@identifier and @target=$elems[@xsi:type=('ApplicationInteraction', 'ApplicationFunction')]/@identifier and @target=$serves/@target] ",
+        "let $aggregates := /ea:model/ea:relationships/ea:relationship[@xsi:type=$rt_aggregate and @target=$elems[@xsi:type='ApplicationComponent']/@identifier and @source=$elems[@xsi:type='ApplicationCollaboration']/@identifier and @source=$serves/@target] ",
+
+        "let $target := ( ",
+        "  for $ex in $target_elem ",
+        "  let $ecount := count($elems[@xsi:type=$ex]) ",
+        "  return if ($ecount>0) then $ex else () ",
+        ") ",
+
+        "let $totalelem := count($elems[@xsi:type=$target]) ",
+
+        "let $count := sum( ",
+        "  for $e in $target ",
+        "  let $check := $elems[@xsi:type=$e] ",
+        "  return count($check) - count(( ",
+        "    for $elem in $check ",
+        "    where ( $elem[@identifier=$serves/@target] or ",
+        "            $elem[@identifier=$aggregates/@target] or ",
+        "            $elem[@identifier=$assignments/@source] ",
+        "    ) ",
+        "    return $elem ",
+        "  )) ",
+        ") ",
+        "return ($count, $totalelem)"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI21d",
+      "Name" : "Coherence: Application service serves business process",
+      "Description" : "Every application service is used at least in one business process. Compute 1 - ratio of elements which are not coherent to the rule vs. the total number of elements considered. Raw value = fault count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Correctness",
+      "Normalizer" : "NT_RATIOX:reverseRatio=true",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.95,
+        "BLRed" : 0.75
+      },
+      "Script" : [
+        "let $source_elem := 'ApplicationService' ",
+        "let $target_elem := ('BusinessProcess', 'BusinessFunction', 'BusinessInteraction', 'BusinessService') ",
+        "let $rt_serve := 'Serving' ",
+
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view[count(descendant::ea:node[@xsi:type='Element'])>0] ",
+        "let $nodes := $views/descendant-or-self::ea:node[@xsi:type='Element'] ",
+        "let $elems := /ea:model/ea:elements/ea:element[@identifier=$nodes/@elementRef] ",
+
+        "let $targetelem:= $elems[@xsi:type=$target_elem] ",
+        "let $serves := /ea:model/ea:relationships/ea:relationship[@xsi:type=$rt_serve and @target=$targetelem/@identifier] ",
+
+        "let $source := ( ",
+        "  for $ex in $source_elem ",
+        "  let $ecount := count($elems[@xsi:type=$ex]) ",
+        "  return if ($ecount>0) then $ex else () ",
+        ") ",
+
+        "let $totalelem := count($elems[@xsi:type=$source]) ",
+
+        "let $count := sum( ",
+        "  for $e in $source ",
+        "  let $check := $elems[@xsi:type=$e] ",
+        "  return count($check) - count(( ",
+        "    for $elem in $check ",
+        "    where $elem[@identifier=$serves/@source] ",
+        "    return $elem ",
+        "  )) ",
+        ") ",
+        "return ($count, $totalelem)"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI22",
+      "Name" : "No empty views",
+      "Description" : "For all views #elem_in_view should not be zero (high ratio of #empty_view to #views). Raw value = fault count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Correctness",
+      "Normalizer" : "NT_RATIOX:reverseRatio=true",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.95,
+        "BLRed" : 0.85
+      },
+      "Script" : [
+        "let $isolation_ratio_threshold := 0.66 ",
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view ",
+        "let $count := sum( ",
+        "  for $vi in $views ",
+        "  let $vielem := $vi/descendant-or-self::ea:node[@xsi:type='Element']/@elementRef ",
+        "  let $num_isolated_nodes := eaqt:execXq(concat('AMMP_countIsolatedElementsInView:vid=', $vi/@identifier/string())) ",
+        "  let $isolation_ratio := if(count($vielem)=0) then 0 else $num_isolated_nodes div count($vielem) ",
+        "  return if(count($vielem)<3 or $isolation_ratio>=$isolation_ratio_threshold) then 1 else 0 ",
+        ") ",
+        "return ($count, count($views))"
+      ],
+      "AmmpList" : [
+        "AMMP_countIsolatedElementsInView"
+      ]
+    },
+    {
+      "Id" : "QI23",
+      "Name" : "No isolated elements (in views)",
+      "Description" : "All nodes over all views in the model should be an endpoint (source or target) of a relationship reference (connection) (low ratio of #isolated_elem to #elem). Raw value = fault count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Correctness",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.05,
+        "BLRed" : 0.15
+      },
+      "Script" : [
+        "let $elems := /ea:model/ea:elements/ea:element[not(@xsi:type='Grouping')] ",
+        "let $allviews := /ea:model/ea:views/ea:diagrams/ea:view ",
+        "let $nodes_in_views := $allviews/ea:node[@xsi:type='Element' and @elementRef=$elems/@identifier] ",
+        "let $rels := /ea:model/ea:relationships/ea:relationship ",
+        "let $conns_in_views := $allviews/ea:connection[@xsi:type='Relationship' and @relationshipRef=$rels/@identifier] ",
+        "let $elems := /ea:model/ea:elements/ea:element ",
+        "let $iso := sum( ",
+        "  for $node in $nodes_in_views  ",
+        "  let $conn := $conns_in_views[@source=$node/@identifier or @target=$node/@identifier] ",
+        "  return if(count($conn)=0) then 1 else 0 ",
+        ") ",
+        "return ($iso, count($nodes_in_views))"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI24",
+      "Name" : "No ambiguous or redundant relationships between elements",
+      "Description" : "ratio of the number of elements involved in ambiguous or redundant connections to the total number of elements. Raw value = count of distinct elements involved in fault.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Correctness",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.10,
+        "BLRed" : 0.33
+      },
+      "Script" : [
+        "let $rels := /ea:model/ea:relationships/ea:relationship ",
+        "let $elements := /ea:model/ea:elements/ea:element ",
+        "return (count(distinct-values( ",
+        "  for $rel in $rels, $relx in $rels ",
+        "  return ( ",
+        "    let $ret := if( $rel/@identifier!=$relx/@identifier and ( ",
+        "                    ( $rel/@source=$relx/@source and $rel/@target=$relx/@target and ($rel/not(exists(ea:name)) or $rel/ea:name/string()=$relx/ea:name/string()) ) or ",
+        "                    ( $rel/@source=$relx/@target and $rel/@target=$relx/@source and ($rel/not(exists(ea:name)) or $rel/ea:name/string()=$relx/ea:name/string()) and $rel/@xsi:type/string()=$relx/@xsi:type/string() ) ",
+        "                  ) ) then ($rel/@source/string(), $rel/@target/string()) else () ",
+        "    return $ret ",
+        "  ) ",
+        ")), count($elements))"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI25",
+      "Name" : "Proper cross-layer dependencies: No illegal BAT Realization relationships",
+      "Description" : "#rel-by-type-and-dir_between_layers-by-type should be zero for all directed Realization relationships between layers from-to B-A, A-T or B-T. Raw value = fit count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Correctness",
+      "Normalizer" : "NT_STEP",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 1.0,
+        "BLRed" : 0.0
+      },
+      "Script" : [
+        "sum(",
+        "  let $realization_BA := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Layers-By-Type:reltype=Realization,layertype_source=Business,layertype_target=Application') ",
+        "  let $realization_AT := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Layers-By-Type:reltype=Realization,layertype_source=Application,layertype_target=Technology') ",
+        "  let $realization_BT := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Layers-By-Type:reltype=Realization,layertype_source=Business,layertype_target=Technology') ",
+        "  return $realization_BA+$realization_AT+$realization_BT",
+        ")"
+      ],
+      "AmmpList" : [
+        "AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Layers-By-Type"
+      ]
+    },
+    {
+      "Id" : "QI26a",
+      "Name" : "Proper aspect-relationship usage: No illegal aspect Assignment relationships",
+      "Description" : "#rel-by-type-and-dir_between_aspects-by-type should be zero for all directed Assignment relationships between aspects from-to B-A, P-B, P-A or A-P. Raw value = fit count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Correctness",
+      "Normalizer" : "NT_STEP",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 1.0,
+        "BLRed" : 0.0
+      },
+      "Script" : [
+        "sum(",
+        "  let $assignment_BA := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Aspects-By-Type:reltype=Assignment,aspecttype_source=Behavior,aspecttype_target=Active') ",
+        "  let $assignment_PB := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Aspects-By-Type:reltype=Assignment,aspecttype_source=Passive,aspecttype_target=Behavior') ",
+        "  let $assignment_PA := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Aspects-By-Type:reltype=Assignment,aspecttype_source=Passive,aspecttype_target=Active') ",
+        "  let $assignment_AP := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Aspects-By-Type:reltype=Assignment,aspecttype_source=Active,aspecttype_target=Passive') ",
+        "  return $assignment_BA + $assignment_PB + $assignment_PA + $assignment_AP ",
+        ")"
+      ],
+      "AmmpList" : [
+        "AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Aspects-By-Type"
+      ]
+    },
+    {
+      "Id" : "QI26b",
+      "Name" : "Proper aspect-relationship usage: No illegal aspect Access relationships",
+      "Description" : "#rel-by-type_between_aspects-by-type should be zero for all undirected Access relationships between aspects from-to A-A, B-B, P-P, A-B, B-A, P-A or P-B. Raw value = fit count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Correctness",
+      "Normalizer" : "NT_STEP",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 1.0,
+        "BLRed" : 0.0
+      },
+      "Script" : [
+        "sum(",
+        "  let $access_AA := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type_Between_Aspects-By-Type:reltype=Access,aspecttype1=Active,aspecttype2=Active') ",
+        "  let $access_BB := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type_Between_Aspects-By-Type:reltype=Access,aspecttype1=Behavior,aspecttype2=Behavior') ",
+        "  let $access_PP := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type_Between_Aspects-By-Type:reltype=Access,aspecttype1=Passive,aspecttype2=Passive') ",
+        "  let $access_AB := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type_Between_Aspects-By-Type:reltype=Access,aspecttype1=Active,aspecttype2=Behavior') ",
+        "  let $access_BA := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type_Between_Aspects-By-Type:reltype=Access,aspecttype1=Behavior,aspecttype2=Active') ",
+        "  let $access_PA := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type_Between_Aspects-By-Type:reltype=Access,aspecttype1=Passive,aspecttype2=Active') ",
+        "  let $access_PB := eaqt:execXq('AMMP_CountIsZero_Rel-By-Type_Between_Aspects-By-Type:reltype=Access,aspecttype1=Passive,aspecttype2=Behavior') ",
+        "  return $access_AA + $access_BB + $access_PP + $access_AB + $access_BA + $access_PA + $access_PB ",
+        ")"
+      ],
+      "AmmpList" : [
+        "AMMP_CountIsZero_Rel-By-Type_Between_Aspects-By-Type"
+      ]
+    },
+    {
+      "Id" : "QI31",
+      "Name" : "Low rate of weak elements",
+      "Description" : "The ratio of elements with zero outgoing relationships to the total number of relationships in the model needs to be low.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Accuracy",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.15,
+        "BLRed" : 0.50
+      },
+      "Script" : [
+        "let $elems := /ea:model/ea:elements/ea:element ",
+        "let $rels := /ea:model/ea:relationships/ea:relationship ",
+        "return (sum( ",
+        "  for $el in $elems ",
+        "  let $out_degree := count($rels[@source=$el/@identifier]) ",
+        "  return if($out_degree=0) then 1 else 0 ",
+        "), count($elems)) "
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI32",
+      "Name" : "Low rate of generic relationships",
+      "Description" : "The ratio of Association relationships to the total number of relationships in the model needs to be low.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Accuracy",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.10,
+        "BLRed" : 0.25
+      },
+      "Script" : [
+        "let $rels := /ea:model/ea:relationships/ea:relationship ",
+        "return (count($rels[@xsi:type='Association']), count($rels)) "
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI33",
+      "Name" : "Low rate of elements without usage in any view",
+      "Description" : "The ratio of elements not used in any view to the total number of elements in the model needs to be low.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Accuracy",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.02,
+        "BLRed" : 0.10
+      },
+      "Script" : [
+        "let $elems := /ea:model/ea:elements/ea:element/@identifier ",
+        "let $nodes := /ea:model/ea:views/ea:diagrams/ea:view/descendant-or-self::ea:node[@xsi:type='Element']/@elementRef ",
+        "let $hits := ( ",
+        "  for $elem in $elems ",
+        "  where $elem=$nodes ",
+        "  return $elem ",
+        ") ",
+        "return (count($elems[not(. = $hits)]), count($elems))"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI34",
+      "Name" : "Low rate of relationships without usage in any view",
+      "Description" : "The ratio of relationships not used in any view to the total number of relationships in the model needs to be low.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Accuracy",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.01,
+        "BLRed" : 0.10
+      },
+      "Script" : [
+        "let $rels := /ea:model/ea:relationships/ea:relationship/@identifier ",
+        "let $conns := /ea:model/ea:views/ea:diagrams/ea:view/ea:connection[@xsi:type='Relationship']/@relationshipRef ",
+        "let $hits := ( ",
+        "  for $rel in $rels ",
+        "  where $rel=$conns ",
+        "  return $rel ",
+        ") ",
+        "return (count($rels[not(. = $hits)]), count($rels))"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI35",
+      "Name" : "Low rate of useless views",
+      "Description" : "Number of views in the 'zone of uselessness' needs to be low. See adapted R. Martin Architecture Metrics: Values close to A=1 and I=1 indicate violation.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Accuracy",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.05,
+        "BLRed" : 0.15
+      },
+      "Script" : [
+        "let $views := eaqt:execXq('BAS_getViews') ",
+        "let $views_ne := eaqt:execXq('BAS_getViewsNonEmptyOnly') ",
+        "let $sum := sum( ",
+        "  for $vi in $views_ne ",
+        "  let $VCCbas := eaqt:execXq(concat('AMMP_VCCbas:vid=', $vi)) ",
+        "  let $VI := eaqt:execXq(concat('AMMP_VI:vid=', $vi)) ",
+        "  let $VA := 1 - eaqt:execNormalizer( concat('NT_3PL:xzero=4.0,k=1.5,raw=', $VCCbas) )",
+        "  return if($VI<1 and $VI>=0.9 and $VA>=0.95) then 1 else 0 ",
+        ") ",
+        "let $total := $sum + (count($views) - count($views_ne))",
+        "return ($total, count($views))"
+      ],
+      "AmmpList" : [
+        "BAS_getViews",
+        "BAS_getViewsNonEmptyOnly",
+        "AMMP_VCCbas",
+        "AMMP_VI"
+      ]
+    },
+    {
+      "Id" : "QI36",
+      "Name" : "Relevant model view coverage",
+      "Description" : "Relevance of view coverage should be high (ratio between #views_fitting_basic_type and #views). Raw value = fit count.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Accuracy",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.85,
+        "BLRed" : 0.5
+      },
+      "Script" : [
+        "let $threshold := 0.625 ",
+        "let $views := eaqt:execXq('BAS_getViews') ",
+        "let $count := sum(",
+        "  for $vi in $views ",
+        "  let $max := eaqt:execXq(concat('AMMP_getMaxClosenessOfViewToBasicType:vid=', $vi)) ",
+        "  return if($max>=$threshold) then 1 else 0 ",
+        ") ",
+        "return ($count, count($views))"
+      ],
+      "AmmpList" : [
+        "BAS_getViews",
+        "AMMP_getMaxClosenessOfViewToBasicType"
+      ]
+    },
+    {
+      "Id" : "QI37",
+      "Name" : "Low rate of connected elem. unconnected in a view",
+      "Description" : "It is seen as a violation of the related Quality Indicator, if for any two elements that appear in a view, there exists at least one relationship in the model connecting both of those elements as source and target, that is not reflected by a connection in the view. The metric iterates over all views and in each view counts pairs of nodes that fulfill the above condition (fault count). The average over all views of the ratio between the fault count and the total amount of elements in a view constitutes the metric.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Accuracy",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.05,
+        "BLRed" : 0.15
+      },
+      "Script" : [
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view ",
+        "let $elems := /ea:model/ea:elements/ea:element/@identifier ",
+        "let $rels := /ea:model/ea:relationships/ea:relationship ",
+        "let $res := ( ",
+        "  for $v in $views ",
+        "  let $nodes := $v/ea:node[@xsi:type='Element'] ",
+        "  let $allnodes := $v/descendant-or-self::ea:node[@xsi:type='Element'] ",
+        "  let $conns := $v/ea:connection[@xsi:type='Relationship'] ",
+        "  let $ret := sum( ",
+        "    for $n1 in $nodes, $n2 in $nodes ",
+        "    where $n1/@identifier!=$n2/@identifier ",
+        "    let $relationships := $rels[ (@source=$n1/@elementRef and @target=$n2/@elementRef) or (@source=$n2/@elementRef and @target=$n1/@elementRef) ] ",
+        "    let $connections := $conns[ @relationshipRef=$relationships/@identifier and ( (@source=$n1/@identifier and @target=$n2/@identifier) or (@source=$n2/@identifier and @target=$n1/@identifier) ) ] ",
+        "    return if( count($connections)>0 or (count($connections)=0 and count($relationships)=0) ) then 0 else 1 ",
+        "  ) ",
+        "  return <tmp faults='{$ret}' elems='{count($allnodes)}' /> ",
+        ") ",
+        "return (sum($res/@faults), sum($res/@elems))"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI38",
+      "Name" : "No element duplicates",
+      "Description" : "The ratio between the count of element clones and the overall count of elements in the model must be low.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Accuracy",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.01,
+        "BLRed" : 0.05
+      },
+      "Script" : [
+        "let $jtypes := ('AndJunction', 'OrJunction') ",
+        "let $elems := /ea:model/ea:elements/ea:element[not(@xsi:type=$jtypes)] ",
+        "let $unique := distinct-values( ",
+        "  for $e in $elems ",
+        "  return concat($e/ea:name/string(), $e/@xsi-type/string()) ",
+        ") ",
+        "return (count($elems) - count($unique), count($elems))"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI41",
+      "Name" : "Low view element connectivity scattering",
+      "Description" : "Computes average VES (scattering of elements across different views in the model) over all views.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Comprehension",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.2,
+        "BLRed" : 0.5
+      },
+      "Script" : [
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view ",
+        "let $rels := /ea:model/ea:relationships/ea:relationship ",
+        "let $conns := /ea:model/ea:views/ea:diagrams/ea:view/ea:connection[@xsi:type='Relationship'] ",
+        "let $R := ( ",
+        "  for $rel in $rels ",
+        "  where $rel/@identifier=$conns/@relationshipRef ",
+        "  return $rel ",
+        ") ",
+        "let $res := sum( ",
+        "  for $v in $views ",
+        "  let $nodes := $v/descendant-or-self::ea:node[@xsi:type='Element'] ",
+        "  let $conns := $v/ea:connection[@xsi:type='Relationship'] ",
+        "  let $RVspan := sum( ",
+        "    for $rel in $R ",
+        "    return if($rel[ (@source=$nodes/@elementRef and not(@target=$nodes/@elementRef)) or (not(@source=$nodes/@elementRef) and @target=$nodes/@elementRef) ]) then 1 else 0 ",
+        "  ) ",
+        "  let $RVdom := sum( ",
+        "    for $rel in $R ",
+        "    return if($rel[@identifier=$conns/@relationshipRef and @source=$nodes/@elementRef and @target=$nodes/@elementRef]) then 1 else 0 ",
+        "  ) ",
+        "  return if($RVspan + $RVdom > 0) then $RVspan div ($RVspan + $RVdom) else 0 ",
+        ") ",
+        "return ($res, count($views))"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI42",
+      "Name" : "Model vs. view complexity fosters understandability",
+      "Description" : "Ratio between overall model complexity (VCC) and avg. view complexity (VCC) should not be close to zero.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Comprehension",
+      "Normalizer" : "NT_RATIOAB",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.7,
+        "BLRed" : 0.3
+      },
+      "Script" : [
+        "let $views := eaqt:execXq('BAS_getViews') ",
+        "let $Mvcc := eaqt:execXq('AMMP_VCCoverall') ",
+        "let $Vvcc := avg( ",
+        "  for $vi in $views ",
+        "  let $VCCbas := eaqt:execXq(concat('AMMP_VCCbas:vid=', $vi)) ",
+        "  return $VCCbas ",
+        ") ",
+        "return ($Mvcc, $Vvcc)"
+      ],
+      "AmmpList" : [
+        "BAS_getViews",
+        "AMMP_VCCbas",
+        "AMMP_VCCoverall"
+      ]
+    },
+    {
+      "Id" : "QI43",
+      "Name" : "Low effort to understand views",
+      "Description" : "Average view cognitive complexity (VCC) should be low.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Comprehension",
+      "Normalizer" : "NT_3PL:xzero=4.0,k=1.5",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.05,
+        "BLRed" : 0.85
+      },
+      "Script" : [
+        "let $views := eaqt:execXq('BAS_getViews') ",
+        "let $Vvcc := avg( ",
+        "  for $vi in $views ",
+        "  let $VCCbas := eaqt:execXq(concat('AMMP_VCCbas:vid=', $vi)) ",
+        "  return $VCCbas ",
+        ") ",
+        "return $Vvcc"
+      ],
+      "AmmpList" : [
+        "BAS_getViews",
+        "AMMP_VCCbas"
+      ]
+    },
+    {
+      "Id" : "QI44",
+      "Name" : "Views close to basic types",
+      "Description" : "The average view closeness to basic types (View basic type conformity and rate of use) should be high.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Comprehension",
+      "Normalizer" : "NT_RAW",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.75,
+        "BLRed" : 0.50
+      },
+      "Script" : [
+        "let $views := eaqt:execXq('BAS_getViews') ",
+        "return avg(",
+        "  for $vi in $views ",
+        "  return eaqt:execXq(concat('AMMP_getMaxClosenessOfViewToBasicType:vid=', $vi))",
+        ")"
+      ],
+      "AmmpList" : [
+        "BAS_getViews",
+        "AMMP_getMaxClosenessOfViewToBasicType"
+      ]
+    },
+    {
+      "Id" : "QI45a",
+      "Name" : "Avoidance of relationship junctions",
+      "Description" : "Computes average RJI (rate of relationship junction involvement) over all views.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Comprehension",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.05,
+        "BLRed" : 0.2
+      },
+      "Script" : [
+        "let $jtypes := ('AndJunction', 'OrJunction') ",
+        "let $jand := 'AndJunction' ",
+        "let $jor := 'OrJunction' ",
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view ",
+        "let $jelems := /ea:model/ea:elements/ea:element[@xsi:type=$jtypes]/@identifier ",
+        "let $jorelems := /ea:model/ea:elements/ea:element[@xsi:type=$jor]/@identifier ",
+        "let $jandelems := /ea:model/ea:elements/ea:element[@xsi:type=$jand]/@identifier ",
+        "let $rels := /ea:model/ea:relationships/ea:relationship ",
+        "let $res := ( ",
+        "  for $v in $views ",
+        "  let $non_junctions := $v/descendant-or-self::ea:node[@xsi:type='Element' and not(@elementRef=$jelems)]/@identifier ",
+        "  let $junctions := $v/descendant-or-self::ea:node[@xsi:type='Element' and @elementRef=$jelems]/@identifier ",
+        "  let $andjuncs := $v/descendant-or-self::ea:node[@xsi:type='Element' and @elementRef=$jandelems]/@identifier ",
+        "  let $orjuncs := $v/descendant-or-self::ea:node[@xsi:type='Element' and @elementRef=$jorelems]/@identifier ",
+        "  let $conns := $v/ea:connection[@xsi:type='Relationship' and @relationshipRef=$rels/@identifier] ",
+        "  let $Rnj_sum := count($conns[@source=$non_junctions and @target=$non_junctions]) ",
+        "  let $Rj_sum := sum( ",
+        "    for $c in $conns ",
+        "    return if($c[ (@source=$andjuncs and @target=$orjuncs) or (@source=$orjuncs and @target=$andjuncs) ]) then 3 else ",
+        "           if($c[ (@source=$andjuncs and @target=$andjuncs) or (@source=$orjuncs and @target=$orjuncs) ]) then 2 else ",
+        "           if($c[ (@source=$junctions and not(@target=$junctions)) or (@target=$junctions and not(@source=$junctions)) ]) then 1 else 0 ",
+        "  ) ",
+        "  return <tmp Rjsum='{$Rj_sum}' RjsumPlusRnjsum='{$Rnj_sum + $Rj_sum}' /> ",
+        ") ",
+        "return (sum($res/@Rjsum), sum($res/@RjsumPlusRnjsum))"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI45b",
+      "Name" : "Avoidance of relationship nesting",
+      "Description" : "Computes average NRMR (nesting-induced relationship missing rate) over all views.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Comprehension",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.05,
+        "BLRed" : 0.20
+      },
+      "Script" : [
+        "let $jtypes := ('AndJunction', 'OrJunction') ",
+        "let $gtype := 'Grouping' ",
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view ",
+        "let $jelems := /ea:model/ea:elements/ea:element[@xsi:type=$jtypes]/@identifier ",
+        "let $gelems := /ea:model/ea:elements/ea:element[@xsi:type=$gtype]/@identifier ",
+        "let $rels := /ea:model/ea:relationships/ea:relationship ",
+        "let $elems := /ea:model/ea:elements/ea:element ",
+        "let $res := ( ",
+        "  for $v in $views ",
+        "  let $nodes := $v/descendant-or-self::ea:node[@xsi:type='Element' and not(@elementRef=$jelems) and not(@elementRef=$gelems)] ",
+        "  let $conns := $v/ea:connection[@xsi:type='Relationship' and @relationshipRef=$rels/@identifier] ",
+        "  let $direct_childs := $nodes/child::ea:node[@xsi:type='Element'] ",
+        "  let $Rnest := sum( ",
+        "    for $dc in $direct_childs ",
+        "    return if(not( $rels[ (@source=$dc/@elementRef and @target=$dc/../@elementRef) or (@target=$dc/@elementRef and @source=$dc/../@elementRef) ] ) and ",
+        "              $elems[@identifier=$dc/@elementRef]/@xsi:type = $elems[@identifier=$dc/../@elementRef]/@xsi:type) then 0 else 1 ",
+        "  ) ",
+        "  let $Rexist := count($conns) ",
+        "  return <tmp Rnest='{$Rnest}' RexistPlusRnest='{$Rexist + $Rnest}' /> ",
+        ") ",
+        "return (sum($res/@Rnest), sum($res/@RexistPlusRnest))"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI46",
+      "Name" : "Average length of element names is significant",
+      "Description" : "Longer element labels convey richer contextual information and foster model comprehension.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Comprehension",
+      "Normalizer" : "NT_3PL:xzero=10.0,k=0.5",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.881,
+        "BLRed" : 0.168
+      },
+      "Script" : [
+        "let $jtypes := ('AndJunction', 'OrJunction') ",
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view ",
+        "let $nodes := $views/descendant-or-self::ea:node[@xsi:type='Element'] ",
+        "let $elems := /ea:model/ea:elements/ea:element[not(@xsi:type=$jtypes) and @identifier=$nodes/@elementRef] ",
+        "let $avgLabelLen := avg( ",
+        "  for $e in $elems ",
+        "  return string-length($e/ea:name/string()) ",
+        ") ",
+        "return $avgLabelLen"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI47",
+      "Name" : "Moderate avg. view element type diversity",
+      "Description" : "Measures the avg. element type diversity over all views in a model and relates it to the overall type diversity, thus evaluating the strength of the view element type focus (avg. VED).",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Comprehension",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.33,
+        "BLRed" : 0.66
+      },
+      "Script" : [
+        "let $jtypes := ('AndJunction', 'OrJunction') ",
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view[count(descendant::ea:node[@xsi:type='Element'])>0] ",
+        "let $nodes := $views/descendant-or-self::ea:node[@xsi:type='Element'] ",
+        "let $elems := /ea:model/ea:elements/ea:element[not(@xsi:type=$jtypes) and @identifier=$nodes/@elementRef] ",
+        "let $UEall := count(distinct-values($elems/@xsi:type)) ",
+        "let $avgUEview := avg( ",
+        "  for $v in $views ",
+        "  let $vnodes := $v/descendant-or-self::ea:node[@xsi:type='Element'] ",
+        "  let $velems := $elems[not(@xsi:type=$jtypes) and @identifier=$vnodes/@elementRef] ",
+        "  return count(distinct-values($velems/@xsi:type)) ",
+        ") ",
+        "return ($avgUEview, $UEall)"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI48",
+      "Name" : "Low view content redundancy",
+      "Description" : "Computes over all views the rate of view content which is duplicated across views (avg. VDC).",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Comprehension",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.25,
+        "BLRed" : 0.5
+      },
+      "Script" : [
+        "(:@=INC_FNCT_J:) ",
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view[count(descendant::ea:node[@xsi:type='Element'])>0] ",
+        "let $elems := /ea:model/ea:elements/ea:element ",
+        "let $rels := /ea:model/ea:relationships/ea:relationship ",
+        "let $allnodes := $views/descendant-or-self::ea:node[@xsi:type='Element' and @elementRef=$elems/@identifier] ",
+        "let $allconns := $views/ea:connection[@xsi:type='Relationship' and @relationshipRef=$rels/@identifier] ",
+        "let $divisor := count($views) * (count($views)-1) ",
+        "let $sum := sum( ",
+        "  for $v1 in $views ",
+        "  let $nodes := $v1/descendant-or-self::ea:node[@xsi:type='Element' and @elementRef=$elems/@identifier]/@elementRef ",
+        "  let $conns := $v1/ea:connection[@xsi:type='Relationship' and @relationshipRef=$rels/@identifier]/@relationshipRef ",
+        "  let $A := $nodes ",
+        "  let $sumJAB := sum( ",
+        "    for $v2 in $views ",
+        "    where not($v1/@identifier=$v2/@identifier) ",
+        "    let $nodes := $v2/descendant-or-self::ea:node[@xsi:type='Element' and @elementRef=$elems/@identifier]/@elementRef ",
+        "    let $conns := $v2/ea:connection[@xsi:type='Relationship' and @relationshipRef=$rels/@identifier]/@relationshipRef ",
+        "    let $B := $nodes ",
+        "    return local:J($A, $B) ",
+        "  ) ",
+        "  return $sumJAB ",
+        "  ) ",
+        "return ($sum, $divisor)"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI51",
+      "Name" : "Low element interconnection complexity",
+      "Description" : "Average element degree (inbound and outbound) over all views in the model should be low.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Maintainability",
+      "Normalizer" : "NT_01SIGMOID:k=1.55",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.45,
+        "BLRed" : 0.7
+      },
+      "Script" : [
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view ",
+        "let $elems := /ea:model/ea:elements/ea:element[not(@xsi:type='Grouping')] ",
+        "let $rels := /ea:model/ea:relationships/ea:relationship ",
+        "let $res := ( ",
+        "  for $v in $views ",
+        "  let $vnodes := $v/descendant-or-self::ea:node[@xsi:type='Element' and @elementRef=$elems/@identifier] ",
+        "  let $all_direct_childs := $vnodes/child::ea:node[@xsi:type='Element'] ",
+        "  let $vconns := ( ",
+        "    for $n in $vnodes ",
+        "    let $direct_childs := $n/child::ea:node[@xsi:type='Element'] ",
+        "    (: nesting (childs) is considered connectivity if real relationships in the model exist respectively :) ",
+        "    let $Rnest := sum( ",
+        "      for $dc in $direct_childs ",
+        "      return if($rels[ (@source=$dc/@elementRef and @target=$dc/../@elementRef) or (@target=$dc/@elementRef and @source=$dc/../@elementRef) ] ) then 1 else 0 ",
+        "    ) ",
+        "    (: is the current node $n a direct child (i.e. there is a parent node nesting it)? if so the conncection to its parent has to be counted, too (+1) :) ",
+        "    let $Rnest := if($n/@identifier=$all_direct_childs/@identifier) then ($Rnest + 1) else $Rnest ",
+        "    return count($n/ancestor::ea:view/ea:connection[@source=$n/@identifier or @target=$n/@identifier]) + $Rnest ",
+        "  ) ",
+        "  return <tmp vconnsSum='{sum($vconns)}' vnodesSum='{count($vnodes)}' /> ",
+        ") ",
+        "return sum($res/@vconnsSum) div sum($res/@vnodesSum)"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI52",
+      "Name" : "Low impact of change of elements",
+      "Description" : "Average element importance should be low, with element importance = mean of all weighted outbound degree relationships of weighted element.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Maintainability",
+      "Normalizer" : "NT_3PL:xzero=45.0,k=0.025",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.38,
+        "BLRed" : 0.62
+      },
+      "Script" : [
+        "let $omega_k := 3.5 ",
+        "let $elems := /ea:model/ea:elements/ea:element ",
+        "let $rels := /ea:model/ea:relationships/ea:relationship ",
+        "return avg(",
+        "  for $el in $elems ",
+        "  let $elemtype := $el/@xsi:type/string() ",
+        "  (: let $elem_weight := eaqt:execXq(concat('HLP_getElementWeightByType:elemtype=', $elemtype)) :) ",
+        "  (:@=INC_getElementWeightByType:)",
+        "  let $elem_weight := $INC_getElementWeightByType ",
+        "  let $outbound := $rels[@source=$el/@identifier]/@xsi:type/string() ",
+        "  let $degree := count($outbound) ",
+        "  let $omega := math:exp($degree div $omega_k) - 1 ",
+        "  return if(empty($outbound)) then 0 else $omega * ($elem_weight * (sum( ",
+        "    for $reltype in $outbound ",
+        "    (: return eaqt:execXq(concat('HLP_getRelationshipWeightByType:reltype=', $reltype)) :) ",
+        "    (:@=INC_getRelationshipWeightByType:)",
+        "    return $INC_getRelationshipWeightByType",
+        "  ) div count($outbound)))",
+        ")"
+      ],
+      "AmmpList" : [
+        "INC_maxElemImportance",
+        "INC_getElementWeightByType",
+        "INC_getRelationshipWeightByType"
+      ]
+    },
+    {
+      "Id" : "QI53",
+      "Name" : "Low impact of change of views",
+      "Description" : "Normalized avg. RFV needs to be low. See adapted Chidamber & Kemerer metrics.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Maintainability",
+      "Normalizer" : "NT_01SIGMOID:k=21.0",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.22,
+        "BLRed" : 0.78
+      },
+      "Script" : [
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view[count(descendant::ea:node[@xsi:type='Element'])>0] ",
+        "let $allnodes := $views/descendant-or-self::ea:node[@xsi:type='Element'] ",
+        "let $elems := /ea:model/ea:elements/ea:element[not(@xsi:type='Grouping') and @identifier=$allnodes/@elementRef] ",
+        "let $rels := /ea:model/ea:relationships/ea:relationship ",
+        "let $res := avg( ",
+        "  for $v in $views ",
+        "  let $nodes := $v/descendant-or-self::ea:node[@xsi:type='Element'] ",
+        "  let $span := distinct-values( ",
+        "    for $e in $elems ",
+        "    return if(not($e[@identifier=$nodes/@elementRef]) and $rels[ (@source=$nodes/@elementRef and @target=$e/@identifier) or (@source=$e/@identifier and @target=$nodes/@elementRef) ]) then $e/@identifier else () ",
+        "  ) ",
+        "  return count(distinct-values( ($elems[@identifier=$nodes/@elementRef]/@identifier, $span) )) ",
+        ") ",
+        "return $res"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI54",
+      "Name" : "Low average modeling error proneness",
+      "Description" : "Low avg. value for Halstead EV over all views in the model. Raw value = avg(T) in minutes, i.e. avg(EV) over all views div stroud-number (18) div 60.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Maintainability",
+      "Normalizer" : "NT_3PL:xzero=3.0,k=0.16",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.50,
+        "BLRed" : 0.75
+      },
+      "Script" : [
+        "let $log2 := math:log(2) ",
+        "let $stroud := 18 ",
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view ",
+        "return avg( ",
+        "  for $vi in $views ",
+        "  let $vpid := $vi/@identifier ",
+        "  let $nodes := /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vpid]/descendant-or-self::ea:node[@xsi:type='Element']/@elementRef ",
+        "  let $elems := /ea:model/ea:elements/ea:element[@identifier=$nodes] ",
+        "  let $conns := /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vpid]/ea:connection/@relationshipRef ",
+        "  let $rels := /ea:model/ea:relationships/ea:relationship[@identifier=$conns] ",
+        "  let $n1 := count(distinct-values($rels/@xsi:type)) ",
+        "  let $N1 := count($rels) ",
+        "  let $n2 := count(distinct-values($elems/@xsi:type)) ",
+        "  let $N2 := count($elems) ",
+        "  let $n := $n1+$n2 ",
+        "  let $N := $N1+$N2 ",
+        "  let $V := if($n=0) then 0 else $N * (math:log($n) div $log2) ",
+        "  let $DV_ := if($n2=0) then 0 else $n1 * ($N2 div $n2) ",
+        "  let $DV := if($DV_=0) then 0 else $DV_ * (math:log($DV_) div $log2) ",
+        "  let $EV := $V * $DV ",
+        "  return $EV ",
+        ") div $stroud div 60"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI55",
+      "Name" : "High view cohesion / Low view coupling",
+      "Description" : "Adapted Chidamber & Kemerer / Henderson-Sellers LCOM5 metric: Lack of Cohesion in Views (LCOV) should be low.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Maintainability",
+      "Normalizer" : "NT_RAW",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.25,
+        "BLRed" : 0.5
+      },
+      "Script" : [
+        "let $ignore := ('Grouping', 'AndJunction', 'OrJunction') ",
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view[count(descendant::ea:node[@xsi:type='Element'])>0] ",
+        "let $allnodes := $views/descendant-or-self::ea:node[@xsi:type='Element'] ",
+        "let $elems := /ea:model/ea:elements/ea:element[@identifier=$allnodes/@elementRef and not(@xsi:type/string()=$ignore)] ",
+        "let $rels := /ea:model/ea:relationships/ea:relationship ",
+        "let $vcount := count($views) ",
+        "let $ecount := count($elems) ",
+        "let $big_sigma_e := sum( ",
+        "  for $e in $elems ",
+        "  let $sigma_e := sum( ",
+        "    for $v in $views ",
+        "    let $nodes := $v/descendant-or-self::ea:node[@xsi:type='Element'] ",
+        "    return if($e[@identifier=$nodes/@elementRef]) then 1 else 0 ",
+        "  ) ",
+        "  return $sigma_e ",
+        ") ",
+        "return 1 - ( ( (1 div $ecount) * $big_sigma_e ) - $vcount ) div (1 - $vcount)"
+      ],
+      "AmmpList" : [
+      ]
+    },
+    {
+      "Id" : "QI56",
+      "Name" : "Low proneness to view interlock",
+      "Description" : "Number of views in the 'zone of pain' needs to be low. See adapted R. Martin Architecture Metrics: Therefore the distance from the mainline is computed as VD = (VA + VI) - 1, a violation occurs if VD <= threshold.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "Maintainability",
+      "Normalizer" : "NT_RATIOX",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.1,
+        "BLRed" : 0.25
+      },
+      "Script" : [
+        "let $views := eaqt:execXq('BAS_getViews') ",
+        "let $sum := sum( ",
+        "  for $vi in $views ",
+        "  let $VCCbas := eaqt:execXq(concat('AMMP_VCCbas:vid=', $vi)) ",
+        "  let $VI := eaqt:execXq(concat('AMMP_VI:vid=', $vi)) ",
+        "  let $VA := 1 - eaqt:execNormalizer( concat('NT_3PL:xzero=4.0,k=1.5,raw=', $VCCbas) )",
+        "  return if($VI + $VA - 1 < 0) then 1 else 0 ",
+        ") ",
+        "return ($sum, count($views))"
+      ],
+      "AmmpList" : [
+        "BAS_getViews",
+        "AMMP_VCCbas",
+        "AMMP_VI"
+      ]
+    }
+  ],
+  "Ammp" : [
+    {
+      "Id" : "BAS_getElements",
+      "Name" : "getElements",
+      "Description" : "Get IDs of elements in the model.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "for $nodes in /ea:model/ea:elements/ea:element ",
+        "return $nodes/@identifier/string()"
+      ]
+    },
+    {
+      "Id" : "BAS_getRelationships",
+      "Name" : "getRelationships",
+      "Description" : "Get IDs of relationships in the model.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "for $nodes in /ea:model/ea:relationships/ea:relationship ",
+        "return $nodes/@identifier/string()"
+      ]
+    },
+    {
+      "Id" : "BAS_getViews",
+      "Name" : "getViews",
+      "Description" : "Get IDs of views in the model.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "for $nodes in /ea:model/ea:views/ea:diagrams/ea:view ",
+        "return $nodes/@identifier/string()"
+      ]
+    },
+    {
+      "Id" : "BAS_getViewsNonEmptyOnly",
+      "Name" : "getViews",
+      "Description" : "Get IDs of views in the model, not completely empty.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "for $nodes in /ea:model/ea:views/ea:diagrams/ea:view[count(descendant::ea:node[@xsi:type='Element'])>0] ",
+        "return $nodes/@identifier/string()"
+      ]
+    },
+    {
+      "Id" : "BAS_getElementsByAspectCategory",
+      "Name" : "getElementsByAspectCategory",
+      "Description" : "Get IDs of elements in the model by a given aspect category id.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $cat as xs:string external;",
+        "let $elemtypes := eaqt:execEaMeta(concat('getElementTypesByAspectCategory:id=', $cat)) ",
+        "return eaqt:execXq(concat('BAS_getElementsByTypes:types=', string-join($elemtypes, '~')))"
+      ]
+    },
+    {
+      "Id" : "BAS_getElementsByLayerCategory",
+      "Name" : "getElementsByLayerCategory",
+      "Description" : "Get IDs of elements in the model by a given layer category id.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $cat as xs:string external;",
+        "let $elemtypes := eaqt:execEaMeta(concat('getElementTypesByLayerCategory:id=', $cat)) ",
+        "return eaqt:execXq(concat('BAS_getElementsByTypes:types=', string-join($elemtypes, '~')))"
+      ]
+    },
+    {
+      "Id" : "BAS_getElementsByLayerCategoryAndAspectCategory",
+      "Name" : "getElementsByLayerCategoryAndAspectCategory",
+      "Description" : "Get IDs of elements in the model by a given aspect and layer category id.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $lcat as xs:string external;",
+        "declare variable $acat as xs:string external;",
+        "let $lcat_elems := eaqt:execEaMeta(concat('getElementTypesByLayerCategory:id=', $lcat)) ",
+        "let $acat_elems := eaqt:execEaMeta(concat('getElementTypesByAspectCategory:id=', $acat)) ",
+        "return distinct-values($lcat_elems)[.=distinct-values($acat_elems)]"
+      ]
+    },
+    {
+      "Id" : "BAS_getElementsByType",
+      "Name" : "getElementsByType",
+      "Description" : "Get IDs of elements in the model by a given type.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "(: we keep the singular version because it is faster than searching a whole sequence of types :)",
+        "declare variable $type as xs:string external;",
+        "for $nodes in /ea:model/ea:elements/ea:element ",
+        "where $nodes[@xsi:type=$type] ",
+        "return $nodes/@identifier/string()"
+      ]
+    },
+    {
+      "Id" : "BAS_getElementsByTypes",
+      "Name" : "getElementsByTypes",
+      "Description" : "Get IDs of elements in the model by a given sequence of types.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $types as xs:string external;",
+        "let $types_ := tokenize($types, '~') ",
+        "for $nodes in /ea:model/ea:elements/ea:element ",
+        "where $nodes[@xsi:type=$types_] ",
+        "return $nodes/@identifier/string()"
+      ]
+    },
+    {
+      "Id" : "BAS_getElementsInAllViews",
+      "Name" : "getElementsInAllViews",
+      "Description" : "Get IDs of elements in the model occuring in all views as IDs.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "for $nodes in /ea:model/ea:elements/ea:element ",
+        "where /ea:model/ea:views/ea:diagrams/ea:view/ea:node[@elementRef=$nodes/@identifier] ",
+        "return $nodes/@identifier/string()"
+      ]
+    },
+    {
+      "Id" : "BAS_getElementsInView",
+      "Name" : "getElementsInView",
+      "Description" : "Get IDs of elements in the model occuring in the given view (given by id) as IDs.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $vid as xs:string external;",
+        "for $nodes in /ea:model/ea:elements/ea:element ",
+        "where /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vid]/ea:node[@elementRef=$nodes/@identifier] ",
+        "return $nodes/@identifier/string()"
+      ]
+    },
+    {
+      "Id" : "AMMP_countIsolatedElementsInView",
+      "Name" : "countIsolatedElementsInView",
+      "Description" : "Get number of isolated elements in the given view (given by id).",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $vid as xs:string external;",
+        "let $nodes_in_view := /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vid]/ea:node[@xsi:type='Element'] ",
+        "let $count_isolated_nodes := sum( ",
+        "  for $node in $nodes_in_view ",
+        "  let $conn := /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vid]/ea:connection[@source=$node/@identifier or @target=$node/@identifier] ",
+        "  return if(count($conn)=0) then 1 else 0 ",
+        ") ",
+        "return $count_isolated_nodes"
+      ]
+    },
+    {
+      "Id" : "BAS_getRelationshipsByCategory",
+      "Name" : "getRelationshipsByCategory",
+      "Description" : "Get IDs of relationships in the model by given category id.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $cat as xs:string external;",
+        "let $reltypes := eaqt:execEaMeta(concat('getRelationshipTypesByRelationshipCategory:id=', $cat)) ",
+        "return eaqt:execEaMeta(concat('getElementsByTypes:types=', $reltypes))"
+      ]
+    },
+    {
+      "Id" : "BAS_getRelationshipsByType",
+      "Name" : "getRelationshipsByType",
+      "Description" : "Get IDs of relationships in the model by a given type.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "(: we keep the singular version because it is faster than searching a whole sequence of types :)",
+        "declare variable $type as xs:string external;",
+        "for $nodes in /ea:model/ea:relationships/ea:relationship ",
+        "where $nodes[@xsi:type=$type] ",
+        "return $nodes/@identifier/string()"
+      ]
+    },
+    {
+      "Id" : "BAS_getRelationshipsByTypes",
+      "Name" : "getRelationshipsByTypes",
+      "Description" : "Get IDs of relationships in the model by a given sequence of types.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $types as xs:string external;",
+        "let $types_ := tokenize($types, '~') ",
+        "for $nodes in /ea:model/ea:relationships/ea:relationship ",
+        "where $nodes[@xsi:type=$types_] ",
+        "return $nodes/@identifier/string()"
+      ]
+    },
+    {
+      "Id" : "BAS_getRelationshipsInAllViews",
+      "Name" : "getRelationshipsInAllViews",
+      "Description" : "Get IDs of relationships in the model occuring in all views as IDs.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "for $nodes in /ea:model/ea:relationships/ea:relationship ",
+        "where /ea:model/ea:views/ea:diagrams/ea:view/ea:connection[@relationshipRef=$nodes/@identifier] ",
+        "return $nodes/@identifier/string()"
+      ]
+    },
+    {
+      "Id" : "BAS_getRelationshipsInView",
+      "Name" : "getRelationshipsInView",
+      "Description" : "Get IDs of relationships in the model occuring in the given view (given by id) as IDs.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $vid as xs:string external;",
+        "for $nodes in /ea:model/ea:relationships/ea:relationship ",
+        "where /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vid]/ea:connection[@relationshipRef=$nodes/@identifier] ",
+        "return $nodes/@identifier/string()"
+      ]
+    },
+    {
+      "Id" : "BAS_getRelationshipsOfElement",
+      "Name" : "getRelationshipsOfElement",
+      "Description" : "Get IDs of relationships of a given element (given by id).",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $elemid as xs:string external;",
+        "for $nodes in /ea:model/ea:relationships/ea:relationship ",
+        "where $nodes[@source=$elemid or @target=$elemid] ",
+        "return $nodes/@identifier/string()"
+      ]
+    },
+    {
+      "Id" : "AMMP_CountIsZero_Rel-By-Type_Between_Layers-By-Type",
+      "Name" : "Rel-By-Type_Between_Layers-By-Type",
+      "Description" : "Return 1 if there are no (undirected) relationships by the given type between layers by given types.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $reltype as xs:string external;",
+        "declare variable $layertype1 as xs:string external;",
+        "declare variable $layertype2 as xs:string external;",
+        "let $ret := count(",
+        "   let $elemtypes1 := eaqt:execEaMeta(concat('getElementTypesByLayerCategory:id=', $layertype1)) ",
+        "   let $elemtypes2 := eaqt:execEaMeta(concat('getElementTypesByLayerCategory:id=', $layertype2)) ",
+        "   let $elemids1 := /ea:model/ea:elements/ea:element[@xsi:type=$elemtypes1]/@identifier ",
+        "   let $elemids2 := /ea:model/ea:elements/ea:element[@xsi:type=$elemtypes2]/@identifier ",
+        "   for $relations in /ea:model/ea:relationships/ea:relationship[@xsi:type=$reltype] ",
+        "   where ( ($relations[@source=$elemids1] and $relations[@target=$elemids2]) or ($relations[@source=$elemids2] and $relations[@target=$elemids1]) ) ",
+        "   return $relations",
+        ")",
+        "return if ($ret=0) then 1 else 0"
+      ]
+    },
+    {
+      "Id" : "AMMP_CountIsZero_Rel-By-Type_Between_Aspects-By-Type",
+      "Name" : "Rel-By-Type_Between_Aspects-By-Type",
+      "Description" : "Return 1 if there are no (undirected) relationships by the given type between aspects by given types.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $reltype as xs:string external;",
+        "declare variable $aspecttype1 as xs:string external;",
+        "declare variable $aspecttype2 as xs:string external;",
+        "let $ret := count(",
+        "   let $elemtypes1 := eaqt:execEaMeta(concat('getElementTypesByAspectCategory:id=', $aspecttype1)) ",
+        "   let $elemtypes2 := eaqt:execEaMeta(concat('getElementTypesByAspectCategory:id=', $aspecttype2)) ",
+        "   let $elemids1 := /ea:model/ea:elements/ea:element[@xsi:type=$elemtypes1]/@identifier ",
+        "   let $elemids2 := /ea:model/ea:elements/ea:element[@xsi:type=$elemtypes2]/@identifier ",
+        "   for $relations in /ea:model/ea:relationships/ea:relationship[@xsi:type=$reltype] ",
+        "   where ( ($relations[@source=$elemids1] and $relations[@target=$elemids2]) or ($relations[@source=$elemids2] and $relations[@target=$elemids1]) ) ",
+        "   return $relations",
+        ")",
+        "return if ($ret=0) then 1 else 0"
+      ]
+    },
+    {
+      "Id" : "AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Layers-By-Type",
+      "Name" : "Rel-By-Type-And-Dir_Between_Layers-By-Type",
+      "Description" : "Return 1 if there are no directed relationships by the given type between layers by given types.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $reltype as xs:string external;",
+        "declare variable $layertype_source as xs:string external;",
+        "declare variable $layertype_target as xs:string external;",
+        "   let $ret := count(",
+        "   let $elemtypes_source := eaqt:execEaMeta(concat('getElementTypesByLayerCategory:id=', $layertype_source)) ",
+        "   let $elemtypes_target := eaqt:execEaMeta(concat('getElementTypesByLayerCategory:id=', $layertype_target)) ",
+        "   let $elemids_source := /ea:model/ea:elements/ea:element[@xsi:type=$elemtypes_source]/@identifier ",
+        "   let $elemids_target := /ea:model/ea:elements/ea:element[@xsi:type=$elemtypes_target]/@identifier ",
+        "   for $relations in /ea:model/ea:relationships/ea:relationship[@xsi:type=$reltype] ",
+        "   where $relations[@source=$elemids_source] and $relations[@target=$elemids_target] ",
+        "   return $relations",
+        ")",
+        "return if ($ret=0) then 1 else 0"
+      ]
+    },
+    {
+      "Id" : "AMMP_CountIsZero_Rel-By-Type-And-Dir_Between_Aspects-By-Type",
+      "Name" : "Rel-By-Type-And-Dir_Between_Aspects-By-Type",
+      "Description" : "Return 1 if there are no directed relationships by the given type between aspects by given types.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $reltype as xs:string external;",
+        "declare variable $aspecttype_source as xs:string external;",
+        "declare variable $aspecttype_target as xs:string external;",
+        "   let $ret := count(",
+        "   let $elemtypes_source := eaqt:execEaMeta(concat('getElementTypesByAspectCategory:id=', $aspecttype_source)) ",
+        "   let $elemtypes_target := eaqt:execEaMeta(concat('getElementTypesByAspectCategory:id=', $aspecttype_target)) ",
+        "   let $elemids_source := /ea:model/ea:elements/ea:element[@xsi:type=$elemtypes_source]/@identifier ",
+        "   let $elemids_target := /ea:model/ea:elements/ea:element[@xsi:type=$elemtypes_target]/@identifier ",
+        "   for $relations in /ea:model/ea:relationships/ea:relationship[@xsi:type=$reltype] ",
+        "   where $relations[@source=$elemids_source] and $relations[@target=$elemids_target] ",
+        "   return $relations",
+        ")",
+        "return if ($ret=0) then 1 else 0"
+      ]
+    },
+    {
+      "Id" : "AMMP_getUniqueElementTypesInView",
+      "Name" : "getUniqueElementTypesInView",
+      "Description" : "Get sequence of element type strings of a given view (given by id).",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $vid as xs:string external;",
+        "let $vi := /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vid]/descendant-or-self::ea:node[@xsi:type='Element']/@elementRef ",
+        "return distinct-values(",
+        "  for $elem in /ea:model/ea:elements/ea:element ",
+        "  where $elem[@identifier=$vi] ",
+        "  return $elem/@xsi:type/string()",
+        ")"
+      ]
+    },
+    {
+      "Id" : "AMMP_getMaxClosenessOfViewToBasicType",
+      "Name" : "getMaxClosenessOfViewToBasicType",
+      "Description" : "Compute best closeness of a given view (given by id) to a basic type. Please note: Closeness computation is not modularized for performance reasons (see metrics/attic).",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $vid as xs:string external;",
+        "let $unique := eaqt:execXq(concat('AMMP_getUniqueElementTypesInView:vid=', $vid)) ",
+        "let $basicview := eaqt:execEaMeta('getBasicViews') ",
+        "return max(",
+        "  for $bas in $basicview ",
+        "  let $allowed := eaqt:execEaMeta(concat('getElementTypesByBasicView:id=', $bas)) ",
+        "  (:@=INC_VICLbas:) ",
+        "  return $INC_VICLbas",
+        ")"
+      ]
+    },
+    {
+      "Id" : "AMMP_basicViewsCoveredByView",
+      "Name" : "basicViewsCoveredByView",
+      "Description" : "Return set of basic views covered by given view (closeness measure >= threshold). Please note: Closeness computation is not modularized for performance reasons (see metrics/attic).",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $vid as xs:string external;",
+        "let $threshold := 0.625 ",
+        "let $unique := eaqt:execXq(concat('AMMP_getUniqueElementTypesInView:vid=', $vid)) ",
+        "let $basicview := eaqt:execEaMeta('getBasicViews') ",
+        "return (",
+        "  for $bas in $basicview ",
+        "  let $allowed := eaqt:execEaMeta(concat('getElementTypesByBasicView:id=', $bas)) ",
+        "  (:@=INC_VICLbas:) ",
+        "  return if($INC_VICLbas >= $threshold) then $bas else ''",
+        ")"
+      ]
+    },
+    {
+      "Id" : "AMMP_JCP",
+      "Name" : "Junction Complexity Penalty",
+      "Description" : "Return Junction Complexity Penalty for a view (see: VCC).",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $vid as xs:string external;",
+        "let $jtypes := ('AndJunction', 'OrJunction') ",
+        "let $nodes := /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vid]/descendant-or-self::ea:node[@xsi:type='Element']/@elementRef ",
+        "let $conns := /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vid]/ea:connection[@xsi:type='Relationship']/@relationshipRef ",
+        "let $junctions := /ea:model/ea:elements/ea:element[@xsi:type=$jtypes and @identifier=$nodes] ",
+        "return sum( ",
+        "  for $j in $junctions ",
+        "  let $rels := /ea:model/ea:relationships/ea:relationship[@identifier=$conns and (@source=$j/@identifier or @target=$j/@identifier)]/(@source, @target) ",
+        "  let $elems := /ea:model/ea:elements/ea:element[@identifier!=$j/@identifier and @identifier=$rels] ",
+        "  return sum( ",
+        "    for $e in $elems ",
+        "    return if (not($e/@xsi:type=$jtypes)) then 0.1 else ",
+        "           if ($e/@xsi:type=$j/@xsi:type) then 0.2 else 0.4 ",
+        "  ) ",
+        ")"
+      ]
+    },
+    {
+      "Id" : "AMMP_DRCD",
+      "Name" : "Dynamic Relationship Chaining Dicount",
+      "Description" : "Return Dynamic Relationship Chaining Dicount for a view (see: VCC).",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $vid as xs:string external;",
+        "(:@=INC_FNCT_route:) ",
+        "let $dyntypes := ('Triggering', 'Flow') ",
+        "let $nodes := /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vid]/descendant-or-self::ea:node[@xsi:type='Element']/@elementRef ",
+        "let $conns := /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vid]/ea:connection[@xsi:type='Relationship']/@relationshipRef ",
+        "let $rels := /ea:model/ea:relationships/ea:relationship[@xsi:type=$dyntypes and @identifier=$conns] ",
+        "let $_rels := /ea:model/ea:relationships/ea:relationship[not(@xsi:type=$dyntypes) and @identifier=$conns] ",
+        "let $elems := /ea:model/ea:elements/ea:element[@identifier=$nodes] ",
+        "let $sources := ( ",
+        "  for $e in $elems ",
+        "  return if(count($rels[@source=$e/@identifier])=1 and count($rels[@target=$e/@identifier])=0) then $e/@identifier/string() else () ",
+        ") ",
+        "let $targets := ( ",
+        "  for $e in $elems ",
+        "  return if(count($rels[@source=$e/@identifier])=0 and count($rels[@target=$e/@identifier])=1) then $e/@identifier/string() else () ",
+        ") ",
+        "let $paths := ( ",
+        "  for $s in $sources, $t in $targets ",
+        "  return local:route($rels, $s, $t) ",
+        ") ",
+        "let $overall := sum(",
+        "  for $path in $paths ",
+        "  let $token := tokenize($path, ',') ",
+        "  let $p := subsequence($token, 2, count($token)-2) ",
+        "  let $faults := sum( ",
+        "    for $e in $p ",
+        "    return if( count($rels[@source=$e])=1 and count($rels[@target=$e])=1 and ",
+        "               count($_rels[@source=$e])=0 and count($_rels[@target=$e])=0 ) ",
+        "           then 0 else 1 ",
+        "  ) ",
+        "  return if($faults=0) then count($p) else 0",
+        ") ",
+        "return $overall"
+      ]
+    },
+    {
+      "Id" : "AMMP_VCCbas",
+      "Name" : "VCC base value",
+      "Description" : "Return the base value of VCC computation for a view.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $vid as xs:string external;",
+        "let $junction := ('AndJunction', 'OrJunction') ",
+        "let $gtype := 'Grouping' ",
+        "let $elems := /ea:model/ea:elements/ea:element[@xsi:type=$junction]/@identifier ",
+        "let $gelems := /ea:model/ea:elements/ea:element[@xsi:type=$gtype]/@identifier ",
+        "let $junctions := count(/ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vid]/descendant-or-self::ea:node[@xsi:type='Element' and @elementRef=$elems]) ",
+        "let $nodes := /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vid]/descendant-or-self::ea:node[@xsi:type='Element' and not(@elementRef=$elems)] ",
+        "let $elems := count($nodes) ",
+        "let $containers := count($nodes[not(@elementRef=$gelems)]/child::ea:node[@xsi:type='Element']) ",
+        "let $rels := count(/ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vid]/ea:connection[@xsi:type='Relationship']) + $junctions + $containers ",
+        "let $JCP := eaqt:execXq(concat('AMMP_JCP:vid=', $vid)) ",
+        "let $DRCD := eaqt:execXq(concat('AMMP_DRCD:vid=', $vid)) ",
+        "return if($rels + $JCP - $DRCD >= $elems) then $rels - $elems + $JCP - $DRCD + 1 else 1"
+      ]
+    },
+    {
+      "Id" : "AMMP_VCCoverall",
+      "Name" : "VCC base value",
+      "Description" : "Return the overall value of VCC computation for all views.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "let $views := eaqt:execXq('BAS_getViews') ",
+        "let $junction := ('AndJunction', 'OrJunction') ",
+        "let $elems := /ea:model/ea:elements/ea:element[@xsi:type=$junction]/@identifier ",
+        "let $junctions := count(/ea:model/ea:views/ea:diagrams/ea:view/descendant-or-self::ea:node[@xsi:type='Element' and @elementRef=$elems]) ",
+        "let $nodes := /ea:model/ea:views/ea:diagrams/ea:view/descendant-or-self::ea:node[@xsi:type='Element' and not(@elementRef=$elems)] ",
+        "let $elems := count($nodes) ",
+        "let $containers := count($nodes/child::ea:node[@xsi:type='Element']) ",
+        "let $rels := count(/ea:model/ea:views/ea:diagrams/ea:view/ea:connection[@xsi:type='Relationship']) + $junctions + $containers ",
+        "let $res := ( ",
+        "  for $vi in $views ",
+        "  let $JCP := eaqt:execXq(concat('AMMP_JCP:vid=', $vi)) ",
+        "  let $DRCD := eaqt:execXq(concat('AMMP_DRCD:vid=', $vi)) ",
+        "  return <tmp jcp='{$JCP}' drcd='{$DRCD}' /> ",
+        ") ",
+        "let $JCPsum := sum($res/@jcp) ",
+        "let $DRCDsum := sum($res/@drcd) ",
+        "return if($rels + $JCPsum - $DRCDsum >= $elems) then $rels - $elems + $JCPsum - $DRCDsum + 1 else 1"
+      ]
+    },
+    {
+      "Id" : "AMMP_VI",
+      "Name" : "View Instability",
+      "Description" : "Return Instability computation for a view (cf. Adapted R. Martin Architecture Metrics).",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $vid as xs:string external;",
+        "let $views := /ea:model/ea:views/ea:diagrams/ea:view ",
+        "let $nodes := /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$vid]/descendant-or-self::ea:node[@xsi:type='Element']/@elementRef ",
+        "let $elems := /ea:model/ea:elements/ea:element[@identifier=$nodes] ",
+        "let $sosi := ( ",
+        "  for $v in $views ",
+        "  where $v/@identifier!=$vid ",
+        "  let $nodes_target := /ea:model/ea:views/ea:diagrams/ea:view[@identifier=$v/@identifier]/descendant-or-self::ea:node[@xsi:type='Element']/@elementRef ",
+        "  let $elems_target := /ea:model/ea:elements/ea:element[@identifier=$nodes_target] ",
+        "  let $num_shared_elem := count(distinct-values($elems)[. = distinct-values($elems_target)]) ",
+        "  let $so := if($num_shared_elem=0) then 0 else $num_shared_elem div count($elems) ",
+        "  let $si := if($num_shared_elem=0) then 0 else $num_shared_elem div count($elems_target) ",
+        "  let $so := if($num_shared_elem>0 and $so=$si) then 1-$so else $so ",
+        "  return <tmp so='{$so}' si='{$si}' /> ",
+        ") ",
+        "let $sigma_o := sum($sosi/@so) ",
+        "let $sigma_i := sum($sosi/@si) ",
+        "return if($sigma_i + $sigma_o > 0) then $sigma_o div ($sigma_i + $sigma_o) else 1"
+      ]
+    },
+    {
+      "Id" : "HLP_getElementWeightByType",
+      "Name" : "getElementWeightByType",
+      "Description" : "Calculate element weight by given type.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $elemtype as xs:string external;",
+        "let $layer_id := eaqt:execEaMeta(concat('getLayerCategoryByElementType:id=', $elemtype)) ",
+        "let $aspect_id := eaqt:execEaMeta(concat('getAspectCategoryByElementType:id=', $elemtype)) ",
+        "let $layer_weight := max( ",
+        "  for $id in $layer_id ",
+        "  let $layer_weight := eaqt:execEaMeta(concat('getLayerWeightById:@attrib=value,id=', $id)) ",
+        "  return $layer_weight ",
+        ") ",
+        "let $aspect_weight := eaqt:execEaMeta(concat('getAspectWeightById:@attrib=value,id=', $aspect_id)) ",
+        "return xs:integer($layer_weight) + xs:integer($aspect_weight) "
+      ]
+    },
+    {
+      "Id" : "INC_getElementWeightByType",
+      "Name" : "getElementWeightByType",
+      "Description" : "Calculate element weight by given type. Include is a much faster alternative to helper function! Expects: $elemtype set.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "let $layer_id := eaqt:execEaMeta(concat('getLayerCategoryByElementType:id=', $elemtype)) ",
+        "let $aspect_id := eaqt:execEaMeta(concat('getAspectCategoryByElementType:id=', $elemtype)) ",
+        "let $layer_weight := max( ",
+        "  for $id in $layer_id ",
+        "  let $layer_weight := eaqt:execEaMeta(concat('getLayerWeightById:@attrib=value,id=', $id)) ",
+        "  return $layer_weight ",
+        ") ",
+        "let $aspect_weight := eaqt:execEaMeta(concat('getAspectWeightById:@attrib=value,id=', $aspect_id)) ",
+        "let $INC_getElementWeightByType := xs:integer($layer_weight) + xs:integer($aspect_weight) "
+      ]
+    },
+    {
+      "Id" : "HLP_getRelationshipWeightByType",
+      "Name" : "getRelationshipWeightByType",
+      "Description" : "Calculate relationship weight by given type.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $reltype as xs:string external;",
+        "let $rel_id := eaqt:execEaMeta(concat('getRelationshipTypeById:id=', $reltype)) ",
+        "return xs:integer( eaqt:execEaMeta(concat('getRelationshipWeightById:@attrib=value,id=', $rel_id)) ) "
+      ]
+    },
+    {
+      "Id" : "INC_getRelationshipWeightByType",
+      "Name" : "getRelationshipWeightByType",
+      "Description" : "Calculate relationship weight by given type. Include is a much faster alternative to helper function! Expects: $reltype set.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "let $rel_id := eaqt:execEaMeta(concat('getRelationshipTypeById:id=', $reltype)) ",
+        "let $INC_getRelationshipWeightByType := xs:integer( eaqt:execEaMeta(concat('getRelationshipWeightById:@attrib=value,id=', $rel_id)) ) "
+      ]
+    },
+    {
+      "Id" : "HLP_VICLbas",
+      "Name" : "VICLbas",
+      "Description" : "Helper function to compute VICLbas value.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare variable $allowed as xs:string external;",
+        "declare variable $unique as xs:string external;",
+        "let $allowed_ := tokenize($allowed, '~') ",
+        "let $unique_ := if (empty($unique)) then '' else tokenize($unique, '~') ",
+        "let $allowed_ := distinct-values($allowed_) ",
+        "let $unique_ := distinct-values($unique_) ",
+        "let $na := $unique_[not(. = $allowed_)] ",
+        "let $an := $allowed_[not(. = ($allowed_[. = $unique_]) )] ",
+        "let $conformity := if (empty($unique_)) then 0 else 1 - (count($na) div count($unique_)) ",
+        "let $rateofuse := if (empty($unique_)) then 0 else 1 - (count($an) div count($allowed_)) ",
+        "return ($conformity + $rateofuse) div 2 "
+      ]
+    },
+    {
+      "Id" : "INC_VICLbas",
+      "Name" : "VICLbas",
+      "Description" : "Include to compute VICLbas value. Much faster than helper function! Expects $allowed and $unique to be set up front.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "let $allowed := distinct-values($allowed) ",
+        "let $unique := distinct-values($unique) ",
+        "let $na := $unique[not(. = $allowed)] ",
+        "let $an := $allowed[not(. = ($allowed[. = $unique]) )] ",
+        "let $conformity := if (empty($unique)) then 0 else 1 - (count($na) div count($unique)) ",
+        "let $rateofuse := if (empty($unique)) then 0 else 1 - (count($an) div count($allowed)) ",
+        "let $INC_VICLbas := ($conformity + $rateofuse) div 2 "
+      ]
+    },
+    {
+      "Id" : "INC_maxElemImportance",
+      "Name" : "maxElemImportance",
+      "Description" : "get theoretical max. value for element importance.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "let $lcats := eaqt:execEaMeta('getLayerCategories') ",
+        "let $acats := eaqt:execEaMeta('getAspectCategories') ",
+        "let $rtypes := eaqt:execEaMeta('getRelationshipTypes') ",
+        "let $lmax := max(",
+        "  for $lcat in $lcats ",
+        "  return xs:integer( eaqt:execEaMeta(concat('getLayerWeightById:@attrib=value,id=', $lcat)) ) ",
+        ")",
+        "let $amax := max(",
+        "  for $acat in $acats ",
+        "  return xs:integer( eaqt:execEaMeta(concat('getAspectWeightById:@attrib=value,id=', $acat)) ) ",
+        ")",
+        "let $rmax := max(",
+        "  for $rtype in $rtypes ",
+        "  return xs:integer( eaqt:execEaMeta(concat('getRelationshipWeightById:@attrib=value,id=', $rtype)) ) ",
+        ")",
+        "let $INC_maxElemImportance := ( xs:integer($lmax) + xs:integer($amax) ) * xs:integer($rmax)"
+      ]
+    },
+    {
+      "Id" : "INC_FNCT_route",
+      "Name" : "Route",
+      "Description" : "Find all paths between source and sink element.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare function local:route($edges, $visited, $source, $sink) { ",
+        "  if ($source=$sink) then (string-join($visited, ',')) else ( ",
+        "  for $edge in $edges[@source=$source] ",
+        "return if (not($edge[@target=$visited])) then local:route($edges, ($visited, data($edge/@target)), data($edges[@target=$edge/@target]/@target), $sink) else () ",
+        ") ",
+        "}; ",
+        "declare function local:route($edges, $source, $sink) { ",
+        "  local:route($edges, $source, $source, $sink) ",
+        "};"
+      ]
+    },
+    {
+      "Id" : "INC_FNCT_J",
+      "Name" : "Jaccard similarity index",
+      "Description" : "Computes the Jaccard similarity between sets $A and $B.",
+      "Version" : "1.0",
+      "Date" : "2019-09-28",
+      "Script" : [
+        "declare function local:J($A, $B) { ",
+        "  let $count_intersect := count(distinct-values($A)[. = distinct-values($B)]) ",
+        "  return if( (count($A) + count($B) - $count_intersect) >0 ) then $count_intersect div (count($A) + count($B) - $count_intersect) else 0 ",
+        "};"
+      ]
+    }
+  ]
+}

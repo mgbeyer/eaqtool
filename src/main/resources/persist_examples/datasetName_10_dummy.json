@@ -1,0 +1,61 @@
+{
+  "docType" : "jsonts",
+  "version" : "1.0",
+  "dataSourceName" : "/just/a/path/dummy.xml",
+  "dataSourceId" : "1234567890",
+  "header" : {
+    "datasetName" : "datasetName",
+    "datasetDescription" : "datasetDescription",
+    "datasetVersion" : "1.0",
+    "datasetDate" : "1955-11-12T18:38:00",
+    "startTime" : "1955-11-12T18:38:00",
+    "endTime" : "2015-10-21T19:28:00",
+    "dataGenerator" : "dataSource",
+    "dataGeneratorVersion" : "dataSourceVersion"
+  },
+  "globals" : {
+    "globalBLGreen" : "0.25",
+    "globalBLRed" : "0.75",
+    "globalBLMarginGreen" : "0.1",
+    "globalBLMarginRed" : "0.1",
+    "standardScaleMin" : "0.0",
+    "standardScaleMax" : "1.0"
+  },
+  "dataProvider" : [ {
+    "providerId" : "M_ratio-test",
+    "providerName" : "Ratio Test",
+    "providerDescription" : "providerDescription",
+    "providerVersion" : "providerVersion",
+    "providerDate" : "1955-11-12",
+    "providerMetaHook" : "providerMetaHook",
+    "providerNormalizer" : "providerNormalizer",
+    "providerScaleMin" : "providerScaleMin",
+    "providerScaleMax" : "providerScaleMax",
+    "providerSweetspot" : "SCALE_MIN",
+    "providerBLGreen" : "0.5",
+    "providerBLRed" : "0.75"
+  }, {
+    "providerId" : "M_ratio-test-2",
+    "providerName" : "Ratio Test 2",
+    "providerDescription" : "providerDescription",
+    "providerVersion" : "providerVersion",
+    "providerDate" : "1955-11-12",
+    "providerMetaHook" : "providerMetaHook",
+    "providerNormalizer" : "providerNormalizer",
+    "providerScaleMin" : "providerScaleMin",
+    "providerScaleMax" : "providerScaleMax",
+    "providerSweetspot" : "SCALE_MAX",
+    "providerBLGreen" : "0.65",
+    "providerBLRed" : "0.2"
+  } ],
+  "data" : [ {
+    "data_ts" : "1955-11-12T18:38:00",
+    "data_p" : [ [ "M_ratio-test", "11", "0.84" ], [ "M_ratio-test-2", "4", "0.22" ] ]
+  }, {
+    "data_ts" : "1985-10-26T21:00:00",
+    "data_p" : [ [ "M_ratio-test", "13.5", "0.04" ], [ "M_ratio-test-2", "0", "0.0" ] ]
+  }, {
+    "data_ts" : "2015-10-21T19:28:00",
+    "data_p" : [ [ "M_ratio-test", "3", "0.77" ], [ "M_ratio-test-2", "4", "0.32" ] ]
+  } ]
+}
