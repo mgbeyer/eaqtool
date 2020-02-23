@@ -72,14 +72,14 @@ public class ANSIConsoleView {
                 Ansi.Color cbgMarker = Ansi.Color.DEFAULT;
                 String BLGreenRedTextMarker = "";
                 String BLYellowTextMarker = "";
-                if (BLmarker==BL_MARKER_GREEN || BLmarker==BL_MARKER_RED) {
+                if (BLmarker==MetricLog.BENCHMARK_LEVEL.BL_GREEN.toString() || BLmarker==MetricLog.BENCHMARK_LEVEL.BL_RED.toString()) {
                     BLYellowTextMarker = " ";
-                    if (BLmarker==BL_MARKER_GREEN) {
+                    if (BLmarker==MetricLog.BENCHMARK_LEVEL.BL_GREEN.toString()) {
                         cfgName = Ansi.Color.BLACK;
                         cbgName = Ansi.Color.GREEN;
                         BLGreenRedTextMarker = BL_MARKER_GREEN + " ";
                     }
-                    if (BLmarker==BL_MARKER_RED) {
+                    if (BLmarker==MetricLog.BENCHMARK_LEVEL.BL_RED.toString()) {
                         cfgName = Ansi.Color.BLACK;
                         cbgName = Ansi.Color.RED;
                         BLGreenRedTextMarker = BL_MARKER_RED + " ";
@@ -88,11 +88,11 @@ public class ANSIConsoleView {
                     BLGreenRedTextMarker = "  ";
                     cfgName = Ansi.Color.DEFAULT;
                     cbgName = Ansi.Color.DEFAULT;
-                    if (BLmarker==BL_MARKER_YELLOW_PLUS) {
+                    if (BLmarker==MetricLog.BENCHMARK_LEVEL.BL_YELLOW_PLUS.toString()) {
                         cfgMarker = Ansi.Color.BLACK;
                         cbgMarker = Ansi.Color.GREEN;
                         BLYellowTextMarker = BL_MARKER_YELLOW_PLUS;
-                    } else if (BLmarker==BL_MARKER_YELLOW_MINUS) {
+                    } else if (BLmarker==MetricLog.BENCHMARK_LEVEL.BL_YELLOW_MINUS.toString()) {
                         cfgMarker = Ansi.Color.BLACK;
                         cbgMarker = Ansi.Color.RED;
                         BLYellowTextMarker = BL_MARKER_YELLOW_MINUS;

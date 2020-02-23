@@ -1,9 +1,6 @@
 package de.rwth_aachen.swc.eaqtool.persist;
 
-import java.io.File;
 import java.io.Serializable;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
@@ -12,16 +9,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import de.rwth_aachen.swc.eaqtool.EAQTConf;
 import de.rwth_aachen.swc.eaqtool.EAQTHelper;
-import de.rwth_aachen.swc.eaqtool.meta.EAQTMeta;
 import de.rwth_aachen.swc.eaqtool.metric.Normalizer;
 import de.rwth_aachen.swc.eaqtool.metric.Scale;
-import de.rwth_aachen.swc.eaqtool.view.ANSIConsoleView;
-import de.rwth_aachen.swc.eaqtool.view.ModelViewCoordinator;
-import de.rwth_aachen.swc.eaqtool.view.ViewOutput;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -342,170 +333,6 @@ public class MetricLog implements Serializable
             }
         }
         return EAQTHelper.valueOf(errmsg) == "" ? null : "\n list of data mismatches between Attribute: [current, legacy] \n" + errmsg;
-    }
-
-    /**
-     * Prepare a ViewOoutput object from log data to be displayed by a view.
-     * @param groupingCriterion Criterion to group the output data by.
-     * @return ViewOutput object for a view.
-     */
-    public ViewOutput prepareViewOutput(VIEW_OUTPUT_GROUPING_CRITERION groupingCriterion) {
-        EAQTMeta metaModels = EAQTMeta.getInstance();
-        Map<String, String> head = new LinkedHashMap<>();
-        head.put(ModelViewCoordinator.VIEW_HEADER_KEY_DATASOURCE_NAME, this.getDataSourceName());
-        head.put(ModelViewCoordinator.VIEW_HEADER_KEY_DATASOURCE_ID, this.getDataSourceId());
-        head.put(ModelViewCoordinator.VIEW_HEADER_KEY_DATASET_NAME, this.getHeader().getDatasetName());
-        head.put(ModelViewCoordinator.VIEW_HEADER_KEY_DATASET_VERSION, this.getHeader().getDatasetVersion());
-        head.put(ModelViewCoordinator.VIEW_HEADER_KEY_DATASET_DATE, this.getHeader().getDatasetDate());
-        Map<String, Map<String, List<String>>> data = new TreeMap<>();
-        Map<String, Map<String, String>> bltotals = new TreeMap<>();
-        List<String> cat;
-        switch (groupingCriterion) {
-            case SR:
-                cat = EAQTHelper.extractIdsFromPojoList(metaModels.getStakeholderRoles(), null);
-                break;
-            case MQC:
-                cat = EAQTHelper.extractIdsFromPojoList(metaModels.getMeasurableQualityCharacteristics(), null);
-                break;
-            case QRC:
-            default:
-                cat = EAQTHelper.extractIdsFromPojoList(metaModels.getQualityRequirementCategories(), null);
-                break;
-        }
-        Collections.sort(cat);
-        for (String c : cat) {
-            Map<String, List<String>> metric_entry = new TreeMap<>();
-            Map<String, String> bl_entry = new TreeMap<>();
-            List<String> criteriaList = null;
-            switch (groupingCriterion) {
-                case SR:
-                    criteriaList = EAQTHelper.extractIdsFromPojoList(metaModels.getQualityRequirementCategoriesByStakeholderRole(c), null);
-                    break;
-                case MQC:
-                    criteriaList = EAQTHelper.extractIdsFromPojoList(metaModels.getQualityRequirementCategoriesByMeasurableQualityCharacteristic(c), null);
-                    break;
-                case QRC:
-                default:
-                    criteriaList = null;
-                    break;
-            }
-            List<List<String>> data_p = this.getData().get(this.getData().size()-1).getDataP();
-            for (DataProvider dp : this.getDataProvider()) {
-                if (criteriaList==null) {
-                    if (dp.getProviderMetaHook().compareTo(c) == 0) {
-                        metric_entry.put(dp.getProviderName(), getPayloadDataForDataProviderId(data_p, dp.getProviderId()));
-                    }
-                } else {
-                    for (String q : criteriaList) {
-                        if (dp.getProviderMetaHook().compareTo(q) == 0) {
-                            metric_entry.put(dp.getProviderName(), getPayloadDataForDataProviderId(data_p, dp.getProviderId()));
-                        }
-                    }
-                }
-            }
-            data.put(c, metric_entry);
-            Double total = 0.0;
-            Double bad = 0.0;
-            Double norm = 0.0;
-            Double good = 0.0;
-            String marker;
-            for (Map.Entry<String, List<String>> me : metric_entry.entrySet()) {
-                total++;
-                marker = me.getValue().get(2);
-                if (me.getValue().get(1).compareTo("-")!=0 && me.getValue().get(0).compareTo("")!=0) {
-                    if (marker.compareTo(ANSIConsoleView.BL_MARKER_GREEN)==0) {
-                        good++;
-                    } else if (marker.compareTo(ANSIConsoleView.BL_MARKER_RED)==0) {
-                        bad++;
-                    } else {
-                        norm++;
-                    }
-                }
-            }
-            Double dg = total>0 ? Normalizer.round( (good/total)*100 , Normalizer.STANDARD_PRECISION) : 0.0;
-            Double dy = total>0 ? Normalizer.round( (norm/total)*100 , Normalizer.STANDARD_PRECISION) : 0.0;
-            Double dr = total>0 ? Normalizer.round( (bad/total)*100 , Normalizer.STANDARD_PRECISION) : 0.0;
-            bl_entry.put( BENCHMARK_LEVEL.BL_GREEN.toString(), dg.toString() );
-            bl_entry.put( BENCHMARK_LEVEL.BL_YELLOW.toString(), dy.toString() );
-            bl_entry.put( BENCHMARK_LEVEL.BL_RED.toString(), dr.toString() );
-            bltotals.put(c, bl_entry);
-        }
-        Double total = 0.0;
-        Double bad = 0.0;
-        Double norm = 0.0;
-        Double good = 0.0;
-        Map<String, String> qindex = new TreeMap<>();
-        List<List<String>> data_p = this.getData().get(this.getData().size()-1).getDataP();
-        String marker;
-        for (DataProvider dp : this.getDataProvider()) {
-            List<String> pl = getPayloadDataForDataProviderId(data_p, dp.getProviderId());
-            total++;
-            marker = pl.get(2);
-            if (pl.get(1).compareTo("-")!=0  && pl.get(0).compareTo("")!=0) {
-                if (marker.compareTo(ANSIConsoleView.BL_MARKER_GREEN) == 0) {
-                    good++;
-                } else if (marker.compareTo(ANSIConsoleView.BL_MARKER_RED) == 0) {
-                    bad++;
-                } else {
-                    norm++;
-                }
-            }
-        }
-        Double dg = total>0 ? Normalizer.round( (good/total)*100 , Normalizer.STANDARD_PRECISION) : 0.0;
-        Double dy = total>0 ? Normalizer.round( (norm/total)*100 , Normalizer.STANDARD_PRECISION) : 0.0;
-        Double dr = total>0 ? Normalizer.round( (bad/total)*100 , Normalizer.STANDARD_PRECISION) : 0.0;
-        qindex.put( BENCHMARK_LEVEL.BL_GREEN.toString(), dg.toString() );
-        qindex.put( BENCHMARK_LEVEL.BL_YELLOW.toString(), dy.toString() );
-        qindex.put( BENCHMARK_LEVEL.BL_RED.toString(), dr.toString() );
-        return new ViewOutput(head, data, bltotals, qindex);
-    }
-
-    private List<String> getPayloadDataForDataProviderId(List<List<String>> payload, String dataProviderId) {
-        List<String> ret = new ArrayList<>();
-
-        DecimalFormatSymbols sep = new DecimalFormatSymbols(Locale.getDefault());
-        sep.setDecimalSeparator('.');
-        DecimalFormat df = new DecimalFormat("0.00", sep);
-        List<String> p = getPayloadEntryForDataProviderId(payload, dataProviderId);
-        String BLmarker = "";
-        if (p.get(2).compareTo("")!=0) {
-            switch (getBenchmarkLevel(dataProviderId, Double.parseDouble(p.get(2)))) {
-                case BL_GREEN:
-                    BLmarker = ANSIConsoleView.BL_MARKER_GREEN;
-                    break;
-                case BL_RED:
-                    BLmarker = ANSIConsoleView.BL_MARKER_RED;
-                    break;
-                case BL_YELLOW_MINUS:
-                    BLmarker = ANSIConsoleView.BL_MARKER_YELLOW_MINUS;
-                    break;
-                case BL_YELLOW_PLUS:
-                    BLmarker = ANSIConsoleView.BL_MARKER_YELLOW_PLUS;
-                    break;
-            }
-        }
-        String normValue = (p.get(2).compareTo("")!=0 ? p.get(2) : StringUtils.repeat(" ", Normalizer.STANDARD_PRECISION + 2));    // payload index 2 = norm. value
-        String rawValue = (p.get(1).compareTo("")!=0 ? p.get(1) : "-");     // payload index 1 = raw value
-        String sweetspot = getDataProviderById(dataProviderId).getProviderSweetspot();
-        ret.add(p.get(2).compareTo("")!=0 ? df.format(Double.parseDouble(normValue)) : "");
-        ret.add(rawValue);
-        ret.add(BLmarker);
-        ret.add(sweetspot);
-
-        return ret;
-    }
-
-    private List<String> getPayloadEntryForDataProviderId(List<List<String>> payload, String dataProviderId) {
-        List<String> ret = new ArrayList<>();
-
-        for (List<String> p : payload) {
-            if (p.get(0).compareTo(dataProviderId) == 0) {  // payload index 0 = Metric ID
-                ret = p;
-                break;
-            }
-        }
-
-        return ret;
     }
 
     /**
