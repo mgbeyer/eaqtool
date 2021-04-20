@@ -1,0 +1,59 @@
+{
+  "Qm_StakeholderRole": [
+    { "id": "EndUser" },
+    { "id": "Architect" },
+    { "id": "ManagerUpperLevel" },
+    { "id": "ManagerOperational" },
+    { "id": "ManagerProject" },
+    { "id": "Developer" }
+  ],
+  "Qm_QualityRequirementCategory": [
+    { "id": "Completeness" },
+    { "id": "Correctness" },
+    { "id": "Accuracy" },
+    { "id": "Comprehension" },
+    { "id": "Maintainability" }
+  ],
+  "Qm_MeasurableQualityCharacteristic": [
+    { "id": "Completeness" },
+    { "id": "Consistency" },
+    { "id": "Validity" },
+    { "id": "Relevance" },
+    { "id": "Timeliness" },
+    { "id": "Simplicity" },
+    { "id": "Changeability" }
+  ],
+  "Qm_Link_Sr_Qrc": [
+    { "SR_id": "EndUser", "QRC_id": "Accuracy" },
+    { "SR_id": "EndUser", "QRC_id": "Comprehension" },
+    { "SR_id": "Architect", "QRC_id": "Completeness" },
+    { "SR_id": "Architect", "QRC_id": "Correctness" },
+    { "SR_id": "Architect", "QRC_id": "Maintainability" },
+    { "SR_id": "ManagerUpperLevel", "QRC_id": "Completeness" },
+    { "SR_id": "ManagerUpperLevel", "QRC_id": "Accuracy" },
+    { "SR_id": "ManagerUpperLevel", "QRC_id": "Comprehension" },
+    { "SR_id": "ManagerOperational", "QRC_id": "Completeness" },
+    { "SR_id": "ManagerOperational", "QRC_id": "Accuracy" },
+    { "SR_id": "ManagerOperational", "QRC_id": "Comprehension" },
+    { "SR_id": "ManagerProject", "QRC_id": "Accuracy" },
+    { "SR_id": "ManagerProject", "QRC_id": "Comprehension" },
+    { "SR_id": "Developer", "QRC_id": "Accuracy" },
+    { "SR_id": "Developer", "QRC_id": "Comprehension" }
+  ],
+  "Qm_Link_Qrc_Mqc": [
+    { "QRC_id": "Completeness", "MQC_id": "Completeness" },
+    { "QRC_id": "Completeness", "MQC_id": "Timeliness" },
+    { "QRC_id": "Correctness", "MQC_id": "Consistency" },
+    { "QRC_id": "Correctness", "MQC_id": "Validity" },
+    { "QRC_id": "Accuracy", "MQC_id": "Consistency" },
+    { "QRC_id": "Accuracy", "MQC_id": "Validity" },
+    { "QRC_id": "Accuracy", "MQC_id": "Relevance" },
+    { "QRC_id": "Accuracy", "MQC_id": "Timeliness" },
+    { "QRC_id": "Comprehension", "MQC_id": "Consistency" },
+    { "QRC_id": "Comprehension", "MQC_id": "Validity" },
+    { "QRC_id": "Comprehension", "MQC_id": "Simplicity" },
+    { "QRC_id": "Maintainability", "MQC_id": "Consistency" },
+    { "QRC_id": "Maintainability", "MQC_id": "Simplicity" },
+    { "QRC_id": "Maintainability", "MQC_id": "Changeability" }
+  ]
+}

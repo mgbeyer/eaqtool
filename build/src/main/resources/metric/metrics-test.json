@@ -1,0 +1,134 @@
+{
+  "Name" : "EAQ Tool Dummy Metrics",
+  "Description" : "This is a metric suite for testing purposes only.",
+  "Version" : "1.0",
+  "Date" : "2019-08-29",
+  "ScriptingLanguage" : "XQuery",
+  "GlobalBLGreen" : 0.25,
+  "GlobalBLRed" : 0.75,
+  "GlobalBLMarginGreen" : 0.1,
+  "GlobalBLMarginRed" : 0.1,
+  "StandardScaleMin" : 0.0,
+  "StandardScaleMax" : 1.0,
+  "Metric" : [
+    {
+      "Id" : "M_ratio-test",
+      "Name" : "Ratio Test",
+      "Description" : "Ratio of total # of elem. vs. total # of rel.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "QRC_Id" : "QRC_Comprehension",
+      "Normalizer" : "NT_SBOWLES:s=3.0",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MIN",
+        "BLGreen" : 0.5,
+        "BLRed" : 0.75
+      },
+      "Script" : [
+        "let $num_elem := eaqt:execXq('AMMP_number-of-elem') ",
+        "let $num_rel := eaqt:execXq('AMMP_number-of-rel') ",
+        "return $num_elem div ($num_elem + $num_rel)"
+      ],
+      "AmmpList" : [
+        "AMMP_number-of-elem",
+        "AMMP_number-of-rel"
+      ]
+    },
+    {
+      "Id" : "M_ratio-test-2",
+      "Name" : "Ratio Test 2",
+      "Description" : "Ratio of total # of elem. vs. total # of view",
+      "Version" : "1.0",
+      "Date" : "2019-09-03",
+      "QRC_Id" : "QRC_Correctness",
+      "Normalizer" : "",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.65,
+        "BLRed" : 0.2
+      },
+      "Script" : [
+        "let $num_elem := eaqt:execXq('AMMP_number-of-elem') ",
+        "let $num_view := eaqt:execXq('AMMP_number-of-view') ",
+        "return $num_elem div ($num_elem + $num_view)"
+      ],
+      "AmmpList" : [
+        "AMMP_number-of-elem",
+        "AMMP_number-of-view"
+      ]
+    },
+    {
+      "Id" : "M_avg_num_view",
+      "Name" : "Avg. number of elem. per view",
+      "Description" : "Average number of elements per view",
+      "Version" : "1.0",
+      "Date" : "2019-09-24",
+      "QRC_Id" : "QRC_Completeness",
+      "Normalizer" : "NT_3PL:xzero=5.0",
+      "Scale" : {
+        "Sweetspot" : "SCALE_MAX",
+        "BLGreen" : 0.75,
+        "BLRed" : 0.5
+      },
+      "Script" : [
+        "let $num_elem := sum(",
+        "   for $v in /ea:model/ea:views/ea:diagrams/ea:view/ea:name/text() ",
+        "   return eaqt:execXq(concat('AMMP_number-of-elem-by-view:v=', $v)) ",
+        ") ",
+        "let $num_v := count(/ea:model/ea:views/ea:diagrams/ea:view) ",
+        "return $num_elem div $num_v"
+      ],
+      "AmmpList" : [
+        "AMMP_number-of-elem-by-view"
+      ]
+    }
+  ],
+  "Ammp" : [
+    {
+      "Id" : "AMMP_number-of-elem",
+      "Name" : "Total number of elements",
+      "Description" : "Counts all elements in the model.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "Script" : [
+        "for $elem in /ea:model/ea:elements",
+        "return count($elem/ea:element)"
+      ]
+    },
+    {
+      "Id" : "AMMP_number-of-rel",
+      "Name" : "Total number of relationships",
+      "Description" : "Counts all relationships in the model.",
+      "Version" : "1.0",
+      "Date" : "2019-08-29",
+      "Script" : [
+        "for $rel in /ea:model/ea:relationships",
+        "return count($rel/ea:relationship)"
+      ]
+    },
+    {
+      "Id" : "AMMP_number-of-view",
+      "Name" : "Total number of views",
+      "Description" : "Counts all views in the model.",
+      "Version" : "1.0",
+      "Date" : "2019-09-03",
+      "Script" : [
+        "for $v in /ea:model/ea:views/ea:diagrams",
+        "return count($v/ea:view)"
+      ]
+    },
+    {
+      "Id" : "AMMP_number-of-elem-by-view",
+      "Name" : "Number of elements in a view",
+      "Description" : "Counts all elements in a given view.",
+      "Version" : "1.0",
+      "Date" : "2019-09-03",
+      "Script" : [
+        "declare variable $v as xs:string external;",
+        "for $views in /ea:model/ea:views/ea:diagrams/ea:view",
+        "where $views/ea:name/text()=$v",
+        "return count($views/descendant-or-self::ea:node[@xsi:type='Element'])"
+      ]
+    }
+  ]
+}
